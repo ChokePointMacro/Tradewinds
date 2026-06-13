@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { ENERGY_PROJECTS, energyProjectsByType, allEnergyProjects } from './energyProjects';
 
-const TYPES = ['nuclear', 'data_center', 'solar', 'wind', 'storage', 'geothermal', 'gas'] as const;
+const TYPES = [
+  'nuclear',
+  'data_center',
+  'semiconductor',
+  'solar',
+  'wind',
+  'storage',
+  'geothermal',
+  'gas',
+] as const;
 const STATUSES = [
   'announced',
   'permitting',

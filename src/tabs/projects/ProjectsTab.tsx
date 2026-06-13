@@ -9,6 +9,7 @@ import type { EnergyProject, EnergyProjectType, ProjectStatus } from '@/types';
 const TYPE_META: Record<EnergyProjectType, { label: string; chip: string; dot: string }> = {
   nuclear: { label: 'Nuclear', chip: 'bg-violet-100 text-violet-800 border-violet-300', dot: '#7c3aed' },
   data_center: { label: 'Data center', chip: 'bg-indigo-100 text-indigo-800 border-indigo-300', dot: '#4f46e5' },
+  semiconductor: { label: 'Chip fab', chip: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300', dot: '#c026d3' },
   solar: { label: 'Solar', chip: 'bg-amber-100 text-amber-800 border-amber-300', dot: '#d97706' },
   wind: { label: 'Wind', chip: 'bg-sky-100 text-sky-800 border-sky-300', dot: '#0284c7' },
   storage: { label: 'Storage', chip: 'bg-emerald-100 text-emerald-800 border-emerald-300', dot: '#059669' },
@@ -39,6 +40,7 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'nuclear', label: 'Nuclear' },
   { id: 'data_center', label: 'Data centers' },
+  { id: 'semiconductor', label: 'Chip fabs' },
   { id: 'solar', label: 'Solar' },
   { id: 'wind', label: 'Wind' },
   { id: 'storage', label: 'Storage' },
@@ -203,15 +205,16 @@ export function ProjectsTab() {
   return (
     <div className="space-y-4 p-4">
       <Card
-        title="US energy projects — 2022 forward"
-        subtitle="Nuclear, data centers and other generation. Every tile links to a public source."
+        title="US energy & advanced-manufacturing projects — 2022 forward"
+        subtitle="Nuclear, data centers, semiconductor fabs and other generation. Every tile links to a public source."
         right={<ProvenanceBadge provenance="SOURCED" source="public filings / press" />}
       >
         <p className="text-xs text-slate-500">
-          A tracker of notable United States energy-infrastructure projects announced, under
-          construction, or brought online since 2022 (plus Vogtle 3&amp;4 as a recently-completed
-          flagship). Figures are publicly reported; where a number isn&apos;t disclosed the field is
-          left blank rather than estimated. Select a tile for details and the source link.
+          A tracker of notable United States energy and advanced-manufacturing projects announced,
+          under construction, or brought online since 2022 (plus Vogtle 3&amp;4 as a
+          recently-completed flagship). Figures are publicly reported; where a number isn&apos;t
+          disclosed the field is left blank rather than estimated. Select a tile for details and the
+          source link.
         </p>
 
         <div className="mt-3 flex flex-wrap gap-1.5">

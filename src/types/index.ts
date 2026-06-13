@@ -172,13 +172,15 @@ export interface CommodityPortActivity {
   year: number;
 }
 
-// Projects tab: US energy-infrastructure tracker (nuclear, data centers, and
-// other generation), 2022 forward. Every figure is publicly reported (SOURCED)
-// and carries a named source + URL; unverifiable fields are simply omitted
-// rather than estimated. This tab is NOT tied to the commodity selector.
+// Projects tab: US energy & advanced-manufacturing infrastructure tracker
+// (nuclear, data centers, semiconductor fabs, and other generation), 2022
+// forward. Every figure is publicly reported (SOURCED) and carries a named
+// source + URL; unverifiable fields are simply omitted rather than estimated.
+// This tab is NOT tied to the commodity selector.
 export type EnergyProjectType =
   | 'nuclear'
   | 'data_center'
+  | 'semiconductor'
   | 'solar'
   | 'wind'
   | 'storage'
