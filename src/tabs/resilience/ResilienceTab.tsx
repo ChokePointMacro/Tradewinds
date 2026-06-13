@@ -7,6 +7,7 @@ import { useProduction } from '@/hooks/useSupply';
 import { track } from '@/lib/analytics';
 import {
   computeResilienceScore,
+  EIA_CHOKEPOINT_COMMODITIES,
   type ResilienceBand,
   type ResiliencePillar,
   type ProducerShare,
@@ -294,6 +295,8 @@ export function ResilienceTab() {
                   >
                     Reset
                   </button>
+                ) : EIA_CHOKEPOINT_COMMODITIES.has(commodityId) && result.chokepoints.length > 0 ? (
+                  <ProvenanceBadge provenance="SOURCED" source="EIA oil-transit flows" />
                 ) : (
                   <ProvenanceBadge provenance="MODELED" />
                 )
@@ -326,10 +329,11 @@ export function ResilienceTab() {
               + 35% chokepoint (100 − Σ criticality × passage-severity). The baseline reflects normal
               operations (latent passage severity); the disruption simulator overlays active closures.
               The country-risk index is sourced from the World Bank Worldwide Governance Indicators
-              (risk = 100 − mean of the six WGI governance scores); chokepoint criticality weights
-              remain modeled estimates of seaborne-flow dependence. Producer shares derive from USGS
-              Mineral Commodity Summaries / EIA production data. Treat the score as a relative
-              comparison across commodities, not an absolute risk figure.
+              (risk = 100 − mean of the six WGI governance scores). Chokepoint criticality is grounded
+              in EIA World Oil Transit Chokepoints flow data for crude &amp; diesel, and remains a
+              modeled estimate for metals. Producer shares derive from USGS Mineral Commodity Summaries
+              / EIA production data. Treat the score as a relative comparison across commodities, not an
+              absolute risk figure.
             </p>
           </Card>
         </>

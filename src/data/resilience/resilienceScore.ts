@@ -75,34 +75,44 @@ const WEIGHTS: Record<ResiliencePillarKey, number> = {
 // risk = 100 − mean WGI governance score. The composite resilience SCORE remains
 // MODELED, but this jurisdiction input is no longer a guess.
 
-// Per-commodity maritime chokepoint dependence (MODELED). `criticality` is a
-// rough share of seaborne flow that transits the passage; the bypass-derived
-// severity (below) scales how damaging a closure is. Gold, silver and palladium
-// move predominantly by air or in low volumes, so their maritime exposure is
-// negligible — represented by an empty/small list rather than a fabricated one.
+// Per-commodity maritime chokepoint dependence. `criticality` is the share of
+// seaborne flow that transits the passage; the bypass-derived severity scales
+// how damaging a closure is. For OIL (crude & diesel) the weights are grounded in
+// EIA "World Oil Transit Chokepoints" total-petroleum-liquids flows, 2023 Mb/d:
+// Malacca 23.7 · Hormuz 21.0 · Suez+SUMED 9.2 · Bab-el-Mandeb 8.8 · Panama 0.9
+// (eia.gov/international/analysis/special-topics/World_Oil_Transit_Chokepoints).
+// Metals have no free per-commodity transit source, so their weights remain
+// MODELED estimates. Gold, silver and palladium move mostly by air / in low
+// volume → negligible maritime exposure (empty/small list, not fabricated).
 const CHOKEPOINT_EXPOSURE: Record<string, { id: string; criticality: number; note: string }[]> = {
+  // crude_oil — EIA-derived (Malacca & Hormuz are the two largest oil chokepoints)
   crude_oil: [
-    { id: 'hormuz', criticality: 0.3, note: 'Gulf crude exports; no maritime bypass.' },
-    { id: 'malacca', criticality: 0.28, note: 'Mideast/Atlantic crude into East Asia.' },
-    { id: 'babelmandeb', criticality: 0.1, note: 'Red Sea routing toward Suez/Europe.' },
+    { id: 'malacca', criticality: 0.3, note: 'EIA: ~23.7 Mb/d oil — Mideast/Atlantic crude into East Asia.' },
+    { id: 'hormuz', criticality: 0.3, note: 'EIA: ~21 Mb/d oil — Gulf crude exports; no maritime bypass.' },
+    { id: 'babelmandeb', criticality: 0.1, note: 'EIA: ~8.8 Mb/d oil — Red Sea routing toward Suez/Europe.' },
   ],
+  // diesel — EIA-derived (refined-product flows on the same lanes)
   diesel: [
-    { id: 'hormuz', criticality: 0.15, note: 'Gulf refinery exports.' },
-    { id: 'suez', criticality: 0.15, note: 'Mideast/India distillate into Europe.' },
-    { id: 'malacca', criticality: 0.18, note: 'Asian refinery flows.' },
+    { id: 'malacca', criticality: 0.18, note: 'EIA: Asian refinery distillate flows.' },
+    { id: 'suez', criticality: 0.15, note: 'EIA: ~9.2 Mb/d oil — Mideast/India distillate into Europe.' },
+    { id: 'hormuz', criticality: 0.15, note: 'EIA: Gulf refinery exports.' },
   ],
+  // metals — MODELED estimates (no free per-commodity transit dataset)
   copper: [
-    { id: 'panama', criticality: 0.18, note: 'West-coast Americas concentrate to Atlantic/Asia.' },
-    { id: 'malacca', criticality: 0.12, note: 'Concentrate into Chinese smelters.' },
+    { id: 'panama', criticality: 0.18, note: 'Modeled: west-coast Americas concentrate to Atlantic/Asia.' },
+    { id: 'malacca', criticality: 0.12, note: 'Modeled: concentrate into Chinese smelters.' },
   ],
-  nickel: [{ id: 'malacca', criticality: 0.32, note: 'Indonesian/Philippine ore & NPI into China.' }],
+  nickel: [{ id: 'malacca', criticality: 0.32, note: 'Modeled: Indonesian/Philippine ore & NPI into China.' }],
   silver: [
-    { id: 'malacca', criticality: 0.06, note: 'Some industrial flows into Asia.' },
-    { id: 'panama', criticality: 0.05, note: 'Latin American flows.' },
+    { id: 'malacca', criticality: 0.06, note: 'Modeled: some industrial flows into Asia.' },
+    { id: 'panama', criticality: 0.05, note: 'Modeled: Latin American flows.' },
   ],
   gold: [],
   palladium: [],
 };
+
+// Commodities whose chokepoint weights are grounded in EIA transit data (vs modeled).
+export const EIA_CHOKEPOINT_COMMODITIES = new Set(['crude_oil', 'diesel']);
 
 function clamp(n: number, lo = 0, hi = 100): number {
   return Math.max(lo, Math.min(hi, n));
