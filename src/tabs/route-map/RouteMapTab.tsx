@@ -5,15 +5,26 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { PORTS, getPort } from '@/data/geo/ports';
 import { CHOKEPOINTS } from '@/data/geo/chokepoints';
 import { getCentroid } from '@/data/geo/countryCentroids';
+import { centroidForIso } from '@/data/geo/worldCentroids';
+import { TRADE_COUNTRIES, tradeCountry } from '@/data/geo/tradeCountries';
 import { useRoute } from '@/hooks/useRoute';
 import { useSpot } from '@/hooks/usePrices';
-import { useProduction, useReserves, useNetTrade } from '@/hooks/useSupply';
+import { useProduction, useReserves, useNetTrade, usePortTrade } from '@/hooks/useSupply';
 import { useAppState } from '@/app/appStateContext';
 import { getCommodity } from '@/data/commodities';
 import { estimateFreight, type FreightEstimate } from '@/data/cost/freight';
 import { fmtPrice as fmtVal } from '@/lib/format';
 import { VESSEL_SPEED_KN } from '@/lib/routing/vessels';
-import type { Port, Provenance, RouteRequest, RouteResult, TransportMode, VesselType } from '@/types';
+import type { Feature, LineString } from 'geojson';
+import type {
+  Port,
+  PortPartnerShare,
+  Provenance,
+  RouteRequest,
+  RouteResult,
+  TransportMode,
+  VesselType,
+} from '@/types';
 import { track } from '@/lib/analytics';
 
 type SupplyMetric = 'production' | 'reserves' | 'netTrade';
@@ -53,6 +64,12 @@ const BUBBLE_MAX_R = 26;
 const COLOR_A = '#0d9488';
 const COLOR_B = '#d97706';
 const COLOR_BASELINE = '#94a3b8';
+const LANE_EXPORT = '#059669'; // green: where the country exports TO
+const LANE_IMPORT = '#dc2626'; // red: where the country imports FROM
+
+function laneFeature(a: [number, number], b: [number, number]): Feature<LineString> {
+  return { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [a, b] } };
+}
 const VESSEL_TYPES = Object.keys(VESSEL_SPEED_KN) as VesselType[];
 const CLOSABLE = CHOKEPOINTS.filter((c) => c.passageKey !== 'cape');
 
@@ -86,6 +103,7 @@ export function RouteMapTab() {
 
   const [mode, setMode] = useState<TransportMode>('sea');
   const [vesselType, setVesselType] = useState<VesselType>('VLCC');
+  const [tradeCtry, setTradeCtry] = useState('United States');
   const [closed, setClosed] = useState<string[]>([]);
   const [compareOn, setCompareOn] = useState(false);
   const [overlayOn, setOverlayOn] = useState(false);
@@ -241,6 +259,55 @@ export function RouteMapTab() {
     }
     return ms;
   }, [fromPortId, toPortId, fromPortIdB, toPortIdB, compareOn, mode, closed]);
+
+  // ── Country trade lanes (UN Comtrade): where the selected country exports to
+  // and imports from, for the active commodity. Drawn as lanes on the map. ──
+  const tradeQ = usePortTrade(commodityId, tradeCtry);
+  const tradeOrigin = centroidForIso(tradeCountry(tradeCtry)?.iso3);
+  const tradePartners = useMemo<PortPartnerShare[]>(
+    () => tradeQ.data?.partners ?? [],
+    [tradeQ.data],
+  );
+  const exportsTo = tradePartners.filter((p) => p.direction === 'export');
+  const importsFrom = tradePartners.filter((p) => p.direction === 'import');
+
+  const laneRoutes = useMemo<RouteLayer[]>(() => {
+    if (!tradeOrigin) return [];
+    const arr: RouteLayer[] = [];
+    for (const p of tradePartners) {
+      const dest = centroidForIso(p.iso);
+      if (!dest) continue;
+      arr.push({
+        id: `lane-${p.direction}-${p.iso}`,
+        feature: laneFeature(tradeOrigin, dest),
+        color: p.direction === 'export' ? LANE_EXPORT : LANE_IMPORT,
+        dashed: p.direction === 'import',
+      });
+    }
+    return arr;
+  }, [tradeOrigin, tradePartners]);
+
+  const laneMarkers = useMemo<MapMarker[]>(() => {
+    if (!tradeOrigin) return [];
+    const ms: MapMarker[] = [
+      { id: 'tc-origin', lng: tradeOrigin[0], lat: tradeOrigin[1], color: '#0f172a', label: tradeCtry },
+    ];
+    for (const p of tradePartners) {
+      const c = centroidForIso(p.iso);
+      if (!c) continue;
+      ms.push({
+        id: `tcp-${p.direction}-${p.iso}`,
+        lng: c[0],
+        lat: c[1],
+        color: p.direction === 'export' ? LANE_EXPORT : LANE_IMPORT,
+        label: `${p.country}: ${p.direction === 'export' ? 'destination' : 'source'} ${p.sharePct}%`,
+      });
+    }
+    return ms;
+  }, [tradeOrigin, tradePartners, tradeCtry]);
+
+  const allRoutes = useMemo(() => [...mapRoutes, ...laneRoutes], [mapRoutes, laneRoutes]);
+  const allMarkers = useMemo(() => [...mapMarkers, ...laneMarkers], [mapMarkers, laneMarkers]);
 
   function togglePassage(passageKey: string) {
     setClosed((prev) =>
@@ -475,6 +542,58 @@ export function RouteMapTab() {
           )}
         </Card>
 
+        <Card
+          title="Country trade — exports & imports"
+          subtitle={`Largest ${commodity?.name ?? ''} partners`}
+          right={
+            exportsTo.length || importsFrom.length ? (
+              <ProvenanceBadge provenance="SOURCED" source="UN Comtrade" />
+            ) : undefined
+          }
+        >
+          <select
+            value={tradeCtry}
+            onChange={(e) => {
+              setTradeCtry(e.target.value);
+              track('trade_country_selected', { country: e.target.value });
+            }}
+            aria-label="Trade country"
+            className="block w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
+          >
+            {TRADE_COUNTRIES.map((c) => (
+              <option key={c.iso3} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          {tradeQ.isLoading ? (
+            <p className="mt-3 text-xs text-slate-400">Loading {commodity?.name} trade…</p>
+          ) : (
+            <div className="mt-3 space-y-3">
+              <TradePartnerList
+                title="Exports to"
+                arrow="→"
+                rows={exportsTo}
+                color={LANE_EXPORT}
+                empty={`${tradeCtry} reports no export-partner detail for ${commodity?.name?.toLowerCase()}.`}
+              />
+              <TradePartnerList
+                title="Imports from"
+                arrow="←"
+                rows={importsFrom}
+                color={LANE_IMPORT}
+                empty={`${tradeCtry} reports no import-partner detail for ${commodity?.name?.toLowerCase()}.`}
+              />
+            </div>
+          )}
+          <p className="mt-2 text-[11px] text-slate-400">
+            Top {commodity?.name?.toLowerCase()} partners for {tradeCtry}
+            {tradeQ.data?.year ? ` (${tradeQ.data.year})` : ''}, drawn as lanes on the map — green =
+            exports to, red = imports from. UN Comtrade, country-level.
+          </p>
+        </Card>
+
         <p className="px-1 text-[11px] leading-snug text-slate-400">
           Canal/strait-aware routing via the Eurostat maritime network (searoute). Distances and
           freight are estimates for visualization only — not for navigation.
@@ -482,8 +601,53 @@ export function RouteMapTab() {
       </aside>
 
       <div className="relative">
-        <MapView routes={mapRoutes} markers={mapMarkers} bubbles={mapBubbles} />
+        <MapView routes={allRoutes} markers={allMarkers} bubbles={mapBubbles} />
       </div>
+    </div>
+  );
+}
+
+function TradePartnerList({
+  title,
+  arrow,
+  rows,
+  color,
+  empty,
+}: {
+  title: string;
+  arrow: string;
+  rows: PortPartnerShare[];
+  color: string;
+  empty: string;
+}) {
+  return (
+    <div>
+      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+        {title} <span className="text-slate-400">{arrow}</span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-[11px] text-slate-400">{empty}</p>
+      ) : (
+        <ul className="space-y-1">
+          {rows.map((p) => (
+            <li key={p.iso ?? p.country} className="text-xs">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-slate-700">{p.country}</span>
+                <span className="shrink-0 tabular-nums text-slate-500">
+                  {p.sharePct}% · ${p.valueUsdB.toLocaleString('en-US', { maximumFractionDigits: 1 })}B
+                </span>
+              </div>
+              <div className="mt-0.5 h-1.5 w-full rounded bg-slate-100">
+                <div
+                  className="h-1.5 rounded"
+                  style={{ width: `${Math.min(100, p.sharePct)}%`, backgroundColor: color, opacity: 0.8 }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

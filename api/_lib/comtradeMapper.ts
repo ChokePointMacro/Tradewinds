@@ -204,6 +204,7 @@ export interface ItemTradeProfile {
 
 export interface PartnerShareRow {
   country: string;
+  iso?: string; // ISO3 (for placing trade lanes on the map)
   sharePct: number; // share of this flow's partner total
   valueUsdB: number;
   direction: 'export' | 'import';
@@ -251,8 +252,8 @@ export function mapTopPartners(
   const data = asRecord(raw).data;
   if (!Array.isArray(data)) return [];
 
-  // { exports, imports } raw-USD per partner.
-  const byPartner = new Map<string, { exports: number; imports: number }>();
+  // { exports, imports } raw-USD + ISO3 per partner.
+  const byPartner = new Map<string, { exports: number; imports: number; iso?: string }>();
   for (const entry of data) {
     const row = entry as Record<string, unknown>;
     if (num(row.partnerCode) === 0) continue; // World aggregate
@@ -262,6 +263,7 @@ export function mapTopPartners(
     const value = num(row.primaryValue);
     if (value <= 0) continue;
     const acc = byPartner.get(partner) ?? { exports: 0, imports: 0 };
+    if (typeof row.partnerISO === 'string' && row.partnerISO.trim()) acc.iso = row.partnerISO.trim();
     if (flow.startsWith('X')) acc.exports += value;
     else if (flow.startsWith('M')) acc.imports += value;
     byPartner.set(partner, acc);
@@ -269,13 +271,14 @@ export function mapTopPartners(
 
   const pick = (dir: 'export' | 'import'): PartnerShareRow[] => {
     const entries = [...byPartner.entries()]
-      .map(([country, v]) => ({ country, value: dir === 'export' ? v.exports : v.imports }))
+      .map(([country, v]) => ({ country, iso: v.iso, value: dir === 'export' ? v.exports : v.imports }))
       .filter((e) => e.value > 0)
       .sort((a, b) => b.value - a.value);
     const total = entries.reduce((s, e) => s + e.value, 0);
     if (total <= 0) return [];
     return entries.slice(0, topPerFlow).map((e) => ({
       country: e.country,
+      iso: e.iso,
       sharePct: Math.round((e.value / total) * 100),
       valueUsdB: round2(e.value / 1e9),
       direction: dir,

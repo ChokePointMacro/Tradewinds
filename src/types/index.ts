@@ -192,6 +192,7 @@ export interface PortItemProfile {
 
 export interface PortPartnerShare {
   country: string;
+  iso?: string; // ISO3, for placing trade lanes on the map
   sharePct: number;
   valueUsdB: number;
   direction: 'export' | 'import';

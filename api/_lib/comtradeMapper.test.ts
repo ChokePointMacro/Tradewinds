@@ -116,8 +116,8 @@ describe('comtradeMapper', () => {
   describe('mapTopPartners', () => {
     const raw = {
       data: [
-        { partnerDesc: 'China', partnerCode: 156, flowCode: 'X', primaryValue: 60e9 },
-        { partnerDesc: 'India', partnerCode: 699, flowCode: 'X', primaryValue: 40e9 },
+        { partnerDesc: 'China', partnerCode: 156, partnerISO: 'CHN', flowCode: 'X', primaryValue: 60e9 },
+        { partnerDesc: 'India', partnerCode: 699, partnerISO: 'IND', flowCode: 'X', primaryValue: 40e9 },
         { partnerDesc: 'World', partnerCode: 0, flowCode: 'X', primaryValue: 100e9 },
         { partnerDesc: 'Japan', partnerCode: 392, flowCode: 'M', primaryValue: 20e9 },
       ],
@@ -126,6 +126,7 @@ describe('comtradeMapper', () => {
       const rows = mapTopPartners(raw);
       const exports = rows.filter((r) => r.direction === 'export');
       expect(exports.map((r) => r.country)).toEqual(['China', 'India']);
+      expect(exports[0]!.iso).toBe('CHN'); // ISO3 carried through for map lanes
       expect(exports[0]!.sharePct).toBe(60);
       expect(exports[1]!.sharePct).toBe(40);
       expect(rows.some((r) => r.country === 'World')).toBe(false);
