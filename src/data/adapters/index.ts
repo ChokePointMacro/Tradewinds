@@ -1,26 +1,27 @@
 import type { PriceSource, ProjectsDataSource, RouteSource, SupplyDataSource } from './types';
-import { MockPriceSource } from './mock/MockPriceSource';
 import { MockSupplyDataSource } from './mock/MockSupplyDataSource';
 import { MockProjectsDataSource } from './mock/MockProjectsDataSource';
 import { LivePriceSource } from './live/LivePriceSource';
-import { FlaggedPriceSource } from './live/FlaggedPriceSource';
 import { LiveSupplyDataSource } from './live/LiveSupplyDataSource';
 import { FlaggedSupplyDataSource } from './live/FlaggedSupplyDataSource';
 import { SearouteRouteSource } from './live/SearouteRouteSource';
 
 export type { PriceSource, ProjectsDataSource, RouteSource, SupplyDataSource } from './types';
 
-// PRD 6.2: a single env flag selects the implementation. Phase 1 wires the live
-// price proxy (gated by the `live-prices` PostHog flag, with mock fallback).
-// Phase 2 routing uses searoute-ts client-side (no API key, deterministic), so
-// it is the default in both modes; it self-falls-back to a great-circle arc.
+// Production posture (2026-06-12): prices are LIVE-OR-ERROR. The mock price
+// fallback is gone — the live proxy (keyless Yahoo by default) either returns a
+// real quote or throws, and the UI renders a source-picker instead of a number.
+// Routing uses searoute-ts client-side (no key, deterministic; self-falls-back to
+// a great-circle arc).
+//
+// NOTE: supply (production/reserves/ports) and projects/bridge-power are still on
+// the mock/seed path pending their per-tab conversion off mock — see
+// PRODUCTION_AUDIT.md. `VITE_DATA_MODE` is retained only for those until migrated.
 const MODE = import.meta.env.VITE_DATA_MODE ?? 'mock';
 
-const mockPrices = new MockPriceSource();
 const mockSupply = new MockSupplyDataSource();
 
-export const priceSource: PriceSource =
-  MODE === 'live' ? new FlaggedPriceSource(new LivePriceSource(), mockPrices) : mockPrices;
+export const priceSource: PriceSource = new LivePriceSource();
 
 export const routeSource: RouteSource = new SearouteRouteSource();
 

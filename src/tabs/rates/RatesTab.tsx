@@ -15,8 +15,9 @@ import {
 import { useAppState } from '@/app/appStateContext';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
+import { SourcedValue, type SourcedStatus } from '@/components/SourcedValue';
 import { COMMODITIES, getCommodity } from '@/data/commodities';
-import { priceSource, DATA_MODE } from '@/data/adapters';
+import { priceSource } from '@/data/adapters';
 import { useHistory, useSpot } from '@/hooks/usePrices';
 import { forecast } from '@/lib/forecast';
 import { RANGE_DAYS, RANGE_KEYS, type RangeKey, isoDaysAgo, todayISO } from '@/lib/ranges';
@@ -49,14 +50,17 @@ function fmtPrice(n: number): string {
 function SpotCard({ commodityId }: { commodityId: string }) {
   const commodity = getCommodity(commodityId)!;
   const { data: spot, isLoading } = useSpot(commodityId);
+  const status: SourcedStatus = isLoading ? 'loading' : spot ? 'live' : 'unavailable';
   return (
-    <Card
-      title={`${commodity.name} spot`}
-      subtitle={commodity.benchmark}
-      right={spot ? <ProvenanceBadge provenance="SOURCED" source={spot.source} /> : undefined}
-    >
-      {spot ? (
-        <div>
+    <Card title={`${commodity.name} spot`} subtitle={commodity.benchmark}>
+      <SourcedValue
+        status={status}
+        domain="price"
+        source={spot?.source}
+        asOfISO={spot?.asOfISO}
+        reason={`No connected source provides a ${commodity.name} price.`}
+      >
+        {spot && (
           <div className="text-2xl font-bold text-slate-900">
             ${fmtPrice(spot.price)}
             <span className="ml-1 text-sm font-normal text-slate-500">/{spot.unit}</span>
@@ -66,13 +70,8 @@ function SpotCard({ commodityId }: { commodityId: string }) {
               </span>
             )}
           </div>
-          <div className="mt-1 text-xs text-slate-400">
-            as of {new Date(spot.asOfISO).toLocaleString()}
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-slate-500">{isLoading ? 'Loading…' : 'No quote'}</p>
-      )}
+        )}
+      </SourcedValue>
     </Card>
   );
 }
@@ -234,7 +233,7 @@ export function RatesTab() {
     [range],
   );
 
-  const { data: history } = useHistory(commodityId, fromISO, toISO);
+  const { data: history, isLoading: historyLoading } = useHistory(commodityId, fromISO, toISO);
 
   const fc = useMemo(
     () => (history && history.length > 1 ? forecast(history, FORECAST_HORIZON_DAYS) : null),
@@ -262,6 +261,11 @@ export function RatesTab() {
   }, [history, fc, showForecast]);
 
   const color = COLORS[commodityId] ?? '#0d9488';
+  const histStatus: SourcedStatus = historyLoading
+    ? 'loading'
+    : history && history.length > 0
+      ? 'live'
+      : 'unavailable';
 
   return (
     <div className="space-y-4 p-4">
@@ -274,7 +278,7 @@ export function RatesTab() {
 
       <Card
         title={`${commodity.name} — price & forecast`}
-        subtitle={`${DATA_MODE === 'live' ? 'Daily close' : 'Mock series (seeded)'} · ${range}`}
+        subtitle={`Daily close · ${range}`}
         right={
           <div className="flex items-center gap-2">
             {fc && (
@@ -289,6 +293,8 @@ export function RatesTab() {
           </div>
         }
       >
+        {histStatus === 'live' ? (
+          <>
         <div className="mb-2 flex items-center justify-between">
           <label className="flex items-center gap-1.5 text-xs text-slate-600">
             <input
@@ -373,6 +379,14 @@ export function RatesTab() {
           Probabilistic forecast (geometric Brownian motion) derived from historical volatility.
           Illustrative scenario bands only — not investment advice or a guaranteed prediction.
         </p>
+          </>
+        ) : (
+          <SourcedValue
+            status={histStatus}
+            domain="price"
+            reason={`No connected source provides ${commodity.name} price history.`}
+          />
+        )}
       </Card>
 
       <NormalizedOverlay fromISO={fromISO} toISO={toISO} />
