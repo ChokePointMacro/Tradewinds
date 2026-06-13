@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tradewinds/package-lock.json
+      - name: Install
+        working-directory: tradewinds
+        run: npm ci
+      - name: Typecheck
+        working-directory: tradewinds
+        run: npm run typecheck
+      - name: Lint
+        working-directory: tradewinds
+        run: npm run lint
+      - name: Test
+        working-directory: tradewinds
+        run: npm test
+      - name: Build
+        working-directory: tradewinds
+        run: npm run build
+      - name: Secret-leak check
+        working-directory: tradewinds
+        run: npm run check:secrets
