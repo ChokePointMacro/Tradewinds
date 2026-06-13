@@ -175,6 +175,20 @@ export function RouteMapTab() {
     return [...rows].sort((a, b) => b.value - a.value);
   }, [metric, production, reserves, netTrade]);
 
+  // Net trade can be live (SOURCED, UN Comtrade) or seed (MODELED) depending on
+  // the `live-trade` flag and fallback; derive the badge from the rows so it
+  // matches what's actually shown. Other metrics use their static meta.
+  const metricBadge = useMemo<{ provenance: Provenance; source?: string }>(() => {
+    if (metric !== 'netTrade') {
+      return { provenance: METRIC_META[metric].provenance, source: METRIC_META[metric].source };
+    }
+    const first = netTrade?.[0];
+    return {
+      provenance: first?.provenance ?? METRIC_META.netTrade.provenance,
+      source: first?.source ?? METRIC_META.netTrade.source,
+    };
+  }, [metric, netTrade]);
+
   const supplyMaxAbs = useMemo(
     () => Math.max(1, ...supplyRows.map((r) => Math.abs(r.value))),
     [supplyRows],
@@ -420,10 +434,7 @@ export function RouteMapTab() {
             <span className="text-xs font-medium text-slate-500">
               Top {METRIC_META[metric].label.toLowerCase()} — {commodity?.name ?? commodityId}
             </span>
-            <ProvenanceBadge
-              provenance={METRIC_META[metric].provenance}
-              source={METRIC_META[metric].source}
-            />
+            <ProvenanceBadge provenance={metricBadge.provenance} source={metricBadge.source} />
           </div>
 
           {supplyRows.length === 0 ? (

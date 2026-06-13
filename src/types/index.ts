@@ -129,11 +129,15 @@ export interface CountryReserves {
 }
 
 // Net trade balance: positive = net exporter, negative = net importer.
+// Seed values are MODELED; the live UN Comtrade path returns SOURCED rows
+// tagged per-row so the overlay badge stays honest even under seed fallback.
 export interface CountryTradeBalance {
   country: string;
   netExport: number;
   unit: string;
   year: number;
+  provenance?: Provenance;
+  source?: string;
 }
 
 // Port-activity tiles (Ports tab). Headline throughput is SOURCED-shaped seed

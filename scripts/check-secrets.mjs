@@ -7,7 +7,13 @@ import { join } from 'node:path';
 const DIST = 'dist';
 
 // Server-only identifiers that must never be referenced by client code.
-const FORBIDDEN = ['SERVICE_ROLE', 'PRICE_API_KEY', 'CLERK_SECRET', 'SUPABASE_SERVICE_ROLE_KEY'];
+const FORBIDDEN = [
+  'SERVICE_ROLE',
+  'PRICE_API_KEY',
+  'COMTRADE_API_KEY',
+  'CLERK_SECRET',
+  'SUPABASE_SERVICE_ROLE_KEY',
+];
 
 if (!existsSync(DIST)) {
   console.error(`[check-secrets] ${DIST}/ not found — run "npm run build" first.`);

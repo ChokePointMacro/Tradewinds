@@ -3,6 +3,8 @@ import { MockPriceSource } from './mock/MockPriceSource';
 import { MockSupplyDataSource } from './mock/MockSupplyDataSource';
 import { LivePriceSource } from './live/LivePriceSource';
 import { FlaggedPriceSource } from './live/FlaggedPriceSource';
+import { LiveSupplyDataSource } from './live/LiveSupplyDataSource';
+import { FlaggedSupplyDataSource } from './live/FlaggedSupplyDataSource';
 import { SearouteRouteSource } from './live/SearouteRouteSource';
 
 export type { PriceSource, RouteSource, SupplyDataSource } from './types';
@@ -14,11 +16,19 @@ export type { PriceSource, RouteSource, SupplyDataSource } from './types';
 const MODE = import.meta.env.VITE_DATA_MODE ?? 'mock';
 
 const mockPrices = new MockPriceSource();
+const mockSupply = new MockSupplyDataSource();
 
 export const priceSource: PriceSource =
   MODE === 'live' ? new FlaggedPriceSource(new LivePriceSource(), mockPrices) : mockPrices;
 
 export const routeSource: RouteSource = new SearouteRouteSource();
-export const supplyDataSource: SupplyDataSource = new MockSupplyDataSource();
+
+// In live mode, net trade is upgraded to SOURCED via the UN Comtrade proxy
+// (behind the `live-trade` PostHog flag), falling back to MODELED seed on any
+// error. Production/reserves/ports remain seed-backed.
+export const supplyDataSource: SupplyDataSource =
+  MODE === 'live'
+    ? new FlaggedSupplyDataSource(new LiveSupplyDataSource(), mockSupply)
+    : mockSupply;
 
 export const DATA_MODE = MODE;

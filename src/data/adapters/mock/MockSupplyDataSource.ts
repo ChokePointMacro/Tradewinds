@@ -166,7 +166,9 @@ export class MockSupplyDataSource implements SupplyDataSource {
   }
 
   async getNetTrade(commodityId: string): Promise<CountryTradeBalance[]> {
-    return NET_TRADE[commodityId] ?? [];
+    // Tag seed rows MODELED so the overlay badge stays honest when the live
+    // Comtrade path is off or falls back to this seed data.
+    return (NET_TRADE[commodityId] ?? []).map((r) => ({ ...r, provenance: 'MODELED' as const }));
   }
 
   async getPortActivity(commodityId: string): Promise<CommodityPortActivity[]> {
