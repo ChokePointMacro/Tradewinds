@@ -34,6 +34,9 @@ export type SourceDomain =
   | 'reserves'
   | 'netTrade'
   | 'portThroughput'
+  | 'tradeByItem'
+  | 'tradePartners'
+  | 'tradeCompanies'
   | 'countryRisk'
   | 'chokepointFlow'
   | 'projects'
@@ -216,6 +219,99 @@ const PORT_THROUGHPUT: DomainSources = {
   ],
 };
 
+// ── Trade by item (export/import composition) ──
+// UN Comtrade gives item composition at the country level (free, your key);
+// port-level item mix is vendor-only (paid).
+const TRADE_BY_ITEM: DomainSources = {
+  domain: 'tradeByItem',
+  label: 'Export / import share by item',
+  defaultId: 'comtrade',
+  options: [
+    {
+      id: 'comtrade',
+      name: 'UN Comtrade',
+      provider: 'UN',
+      tier: 'free',
+      access: 'free-key',
+      status: 'planned',
+      coverage: 'Item composition by HS code, country-level (free API key)',
+    },
+    {
+      id: 'kpler',
+      name: 'Kpler / Vortexa',
+      provider: 'Kpler',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Vessel-tracked item mix at port level',
+    },
+  ],
+};
+
+// ── Top trading partners (countries) ──
+const TRADE_PARTNERS: DomainSources = {
+  domain: 'tradePartners',
+  label: 'Top trading partners',
+  defaultId: 'comtrade',
+  options: [
+    {
+      id: 'comtrade',
+      name: 'UN Comtrade',
+      provider: 'UN',
+      tier: 'free',
+      access: 'free-key',
+      status: 'planned',
+      coverage: 'Bilateral partner-country shares (free API key)',
+    },
+    {
+      id: 'spgta',
+      name: 'S&P Global GTA',
+      provider: 'S&P Global',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Granular bilateral & sub-national flows',
+    },
+  ],
+};
+
+// ── Top trading companies ──
+// Company-level (bill-of-lading) trade data is paid-only; there is no free feed.
+const TRADE_COMPANIES: DomainSources = {
+  domain: 'tradeCompanies',
+  label: 'Top trading companies',
+  defaultId: 'spgta',
+  options: [
+    {
+      id: 'spgta',
+      name: 'S&P Global GTA',
+      provider: 'S&P Global',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Company-level shipment records',
+    },
+    {
+      id: 'panjiva',
+      name: 'Panjiva',
+      provider: 'S&P Panjiva',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Bill-of-lading consignor/consignee',
+    },
+    {
+      id: 'importgenius',
+      name: 'ImportGenius',
+      provider: 'ImportGenius',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Customs manifest records',
+    },
+  ],
+};
+
 // Only domains with a populated catalog are wired so far. Others are added as
 // each tab is converted off mock (see PRODUCTION_AUDIT.md).
 const REGISTRY: Partial<Record<SourceDomain, DomainSources>> = {
@@ -223,6 +319,9 @@ const REGISTRY: Partial<Record<SourceDomain, DomainSources>> = {
   production: PRODUCTION,
   reserves: RESERVES,
   portThroughput: PORT_THROUGHPUT,
+  tradeByItem: TRADE_BY_ITEM,
+  tradePartners: TRADE_PARTNERS,
+  tradeCompanies: TRADE_COMPANIES,
 };
 
 export function getDomainSources(domain: SourceDomain): DomainSources | undefined {

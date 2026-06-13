@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppState } from '@/app/appStateContext';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
+import { SourcedValue } from '@/components/SourcedValue';
 import { getCommodity } from '@/data/commodities';
 import { usePortActivity } from '@/hooks/useSupply';
 import type { CommodityPortActivity, PortRole } from '@/types';
@@ -79,9 +80,41 @@ function PortDetail({ port, onClose }: { port: CommodityPortActivity; onClose: (
           <div className="mt-1 text-sm text-slate-700">{port.cargoType}</div>
         </div>
       </div>
+      <div className="mt-5 border-t border-slate-100 pt-4">
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          Trade detail — {port.country} ({port.cargoType.toLowerCase().includes('import') ? 'import' : port.role})
+        </div>
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div>
+            <div className="mb-1.5 text-xs font-medium text-slate-600">Export / import share by item</div>
+            <SourcedValue
+              status="unavailable"
+              domain="tradeByItem"
+              reason="Connect UN Comtrade (free, your key) for item composition by HS code."
+            />
+          </div>
+          <div>
+            <div className="mb-1.5 text-xs font-medium text-slate-600">Top trading partners</div>
+            <SourcedValue
+              status="unavailable"
+              domain="tradePartners"
+              reason="Connect UN Comtrade (free, your key) for partner-country shares."
+            />
+          </div>
+          <div>
+            <div className="mb-1.5 text-xs font-medium text-slate-600">Top trading companies</div>
+            <SourcedValue
+              status="unavailable"
+              domain="tradeCompanies"
+              reason="Company-level trade is paid-only — no free source exists."
+            />
+          </div>
+        </div>
+      </div>
+
       <p className="mt-3 text-[11px] text-slate-400">
-        Headline throughput is curated from public port/exchange rankings. Declared value, cargo mix
-        and partner shares were modeled estimates with no free source and have been removed.
+        Headline throughput is curated from public port/exchange rankings. Item shares and partner
+        countries come from UN Comtrade once a key is connected; company-level data is paid-only.
       </p>
     </Card>
   );
