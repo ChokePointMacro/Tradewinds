@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CountryProduction } from '@/types';
-import {
-  COUNTRY_RISK,
-  computeResilienceScore,
-  type ResilienceBand,
-} from './resilienceScore';
+import { computeResilienceScore, type ResilienceBand } from './resilienceScore';
+import { COUNTRY_RISK } from './countryRisk';
 
 const YEAR = 2024;
 

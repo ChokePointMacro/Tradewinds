@@ -278,7 +278,7 @@ export function ResilienceTab() {
               <ProducerBars producers={result.producers} />
               <p className="mt-3 text-[11px] text-slate-400">
                 Bars show each origin&apos;s share of listed top-producer supply; colour reflects its
-                modeled jurisdiction-risk score (teal = low → red = high).
+                World Bank WGI jurisdiction-risk score (teal = low → red = high).
               </p>
             </Card>
 
@@ -325,11 +325,11 @@ export function ResilienceTab() {
               concentration (100 − HHI/100) + 30% jurisdiction (100 − production-weighted origin risk)
               + 35% chokepoint (100 − Σ criticality × passage-severity). The baseline reflects normal
               operations (latent passage severity); the disruption simulator overlays active closures.
-              The country-risk index is an illustrative composite of governance stability and
-              trade-route alignment, not a sourced index; chokepoint criticality weights are modeled
-              estimates of seaborne-flow dependence. Producer shares derive from USGS Mineral Commodity
-              Summaries / EIA production data. Treat the score as a relative comparison across
-              commodities, not an absolute risk figure.
+              The country-risk index is sourced from the World Bank Worldwide Governance Indicators
+              (risk = 100 − mean of the six WGI governance scores); chokepoint criticality weights
+              remain modeled estimates of seaborne-flow dependence. Producer shares derive from USGS
+              Mineral Commodity Summaries / EIA production data. Treat the score as a relative
+              comparison across commodities, not an absolute risk figure.
             </p>
           </Card>
         </>

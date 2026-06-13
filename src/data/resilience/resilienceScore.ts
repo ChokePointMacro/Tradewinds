@@ -1,5 +1,6 @@
 import type { CountryProduction } from '@/types';
 import { CHOKEPOINTS } from '@/data/geo/chokepoints';
+import { COUNTRY_RISK, DEFAULT_COUNTRY_RISK } from './countryRisk';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sourcing Resilience Score — the platform's headline summary metric.
@@ -70,39 +71,9 @@ const WEIGHTS: Record<ResiliencePillarKey, number> = {
   chokepoint: 0.35,
 };
 
-// MODELED country-risk index, 0–100 (higher = riskier as a sourcing origin).
-// An illustrative composite of governance stability and trade-route alignment —
-// directionally representative, NOT a sourced index. Swap for World Bank WGI /
-// a sanctions-aware feed before trusting absolute values.
-export const COUNTRY_RISK: Record<string, number> = {
-  'United States': 10,
-  Canada: 10,
-  Australia: 12,
-  Germany: 12,
-  France: 12,
-  Japan: 12,
-  'New Caledonia': 15,
-  Poland: 22,
-  Chile: 25,
-  Brazil: 35,
-  India: 35,
-  Peru: 35,
-  Mexico: 40,
-  'Saudi Arabia': 45,
-  'South Africa': 45,
-  Philippines: 45,
-  Kazakhstan: 50,
-  Indonesia: 50,
-  China: 60,
-  Zimbabwe: 70,
-  'DR Congo': 75,
-  Iraq: 80,
-  Russia: 85,
-  Iran: 85,
-  Venezuela: 88,
-};
-
-const DEFAULT_COUNTRY_RISK = 50; // neutral fallback for an unlisted origin
+// Country-risk index is now SOURCED from the World Bank WGI (see countryRisk.ts):
+// risk = 100 − mean WGI governance score. The composite resilience SCORE remains
+// MODELED, but this jurisdiction input is no longer a guess.
 
 // Per-commodity maritime chokepoint dependence (MODELED). `criticality` is a
 // rough share of seaborne flow that transits the passage; the bypass-derived
