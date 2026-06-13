@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { MapView, type MapBubble, type MapMarker, type RouteLayer } from './MapView';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
@@ -6,7 +7,9 @@ import { PORTS, getPort } from '@/data/geo/ports';
 import { CHOKEPOINTS } from '@/data/geo/chokepoints';
 import { getCentroid } from '@/data/geo/countryCentroids';
 import { centroidForIso } from '@/data/geo/worldCentroids';
+import { seaportForIso } from '@/data/geo/countrySeaports';
 import { TRADE_COUNTRIES, tradeCountry } from '@/data/geo/tradeCountries';
+import { computeSeaRoute, isRecoverableRouteError } from '@/lib/routing/searoute';
 import { useRoute } from '@/hooks/useRoute';
 import { useSpot } from '@/hooks/usePrices';
 import { useProduction, useReserves, useNetTrade, usePortTrade } from '@/hooks/useSupply';
@@ -104,6 +107,7 @@ export function RouteMapTab() {
   const [mode, setMode] = useState<TransportMode>('sea');
   const [vesselType, setVesselType] = useState<VesselType>('VLCC');
   const [tradeCtry, setTradeCtry] = useState('United States');
+  const [selectedPartner, setSelectedPartner] = useState<PortPartnerShare | null>(null);
   const [closed, setClosed] = useState<string[]>([]);
   const [compareOn, setCompareOn] = useState(false);
   const [overlayOn, setOverlayOn] = useState(false);
@@ -306,8 +310,55 @@ export function RouteMapTab() {
     return ms;
   }, [tradeOrigin, tradePartners, tradeCtry]);
 
-  const allRoutes = useMemo(() => [...mapRoutes, ...laneRoutes], [mapRoutes, laneRoutes]);
-  const allMarkers = useMemo(() => [...mapMarkers, ...laneMarkers], [mapMarkers, laneMarkers]);
+  // Clicking a partner computes the actual canal/strait-aware sea route between
+  // the selected country's seaport and the partner's. Reset on country change.
+  useEffect(() => setSelectedPartner(null), [tradeCtry, commodityId]);
+
+  const fromSeaport = seaportForIso(tradeCountry(tradeCtry)?.iso3);
+  const toSeaport = selectedPartner ? seaportForIso(selectedPartner.iso) : undefined;
+
+  const partnerRouteQ = useQuery({
+    queryKey: ['partnerRoute', fromSeaport, toSeaport, vesselType],
+    enabled: Boolean(fromSeaport && toSeaport),
+    queryFn: async () => {
+      const mk = (c: [number, number]): Port => ({
+        id: 'pr',
+        name: '',
+        country: '',
+        lng: c[0],
+        lat: c[1],
+        role: ['export'],
+      });
+      try {
+        return await computeSeaRoute(mk(fromSeaport!), mk(toSeaport!), [], VESSEL_SPEED_KN[vesselType]);
+      } catch (err) {
+        if (await isRecoverableRouteError(err)) return null; // landlocked / no path
+        throw err;
+      }
+    },
+  });
+  const partnerRoute = partnerRouteQ.data;
+
+  const partnerRouteLayer = useMemo<RouteLayer[]>(
+    () => (partnerRoute ? [{ id: 'partner-route', feature: partnerRoute.geojson, color: '#0891b2' }] : []),
+    [partnerRoute],
+  );
+  const partnerRouteMarkers = useMemo<MapMarker[]>(() => {
+    if (!selectedPartner || !fromSeaport || !toSeaport) return [];
+    return [
+      { id: 'pr-from', lng: fromSeaport[0], lat: fromSeaport[1], color: '#0f172a', label: `${tradeCtry} port` },
+      { id: 'pr-to', lng: toSeaport[0], lat: toSeaport[1], color: '#0891b2', label: `${selectedPartner.country} port` },
+    ];
+  }, [selectedPartner, fromSeaport, toSeaport, tradeCtry]);
+
+  const allRoutes = useMemo(
+    () => [...mapRoutes, ...laneRoutes, ...partnerRouteLayer],
+    [mapRoutes, laneRoutes, partnerRouteLayer],
+  );
+  const allMarkers = useMemo(
+    () => [...mapMarkers, ...laneMarkers, ...partnerRouteMarkers],
+    [mapMarkers, laneMarkers, partnerRouteMarkers],
+  );
 
   function togglePassage(passageKey: string) {
     setClosed((prev) =>
@@ -577,6 +628,8 @@ export function RouteMapTab() {
                 rows={exportsTo}
                 color={LANE_EXPORT}
                 empty={`${tradeCtry} reports no export-partner detail for ${commodity?.name?.toLowerCase()}.`}
+                onSelect={setSelectedPartner}
+                selectedIso={selectedPartner?.iso}
               />
               <TradePartnerList
                 title="Imports from"
@@ -584,13 +637,36 @@ export function RouteMapTab() {
                 rows={importsFrom}
                 color={LANE_IMPORT}
                 empty={`${tradeCtry} reports no import-partner detail for ${commodity?.name?.toLowerCase()}.`}
+                onSelect={setSelectedPartner}
+                selectedIso={selectedPartner?.iso}
               />
             </div>
           )}
+
+          {selectedPartner && (
+            <div className="mt-3 rounded-md border border-cyan-200 bg-cyan-50/60 p-2 text-[11px] text-slate-600">
+              {partnerRouteQ.isFetching ? (
+                <span className="text-slate-500">Computing {tradeCtry} ↔ {selectedPartner.country} sea route…</span>
+              ) : partnerRoute ? (
+                <span>
+                  <span className="font-semibold text-cyan-800">{tradeCtry} ↔ {selectedPartner.country}</span> sea
+                  route: {Math.round(partnerRoute.distanceNm).toLocaleString('en-US')} nm ·{' '}
+                  {Math.round(partnerRoute.durationHours / 24)} days at {vesselType}
+                  {partnerRoute.passagesUsed.length > 0 && <> · via {partnerRoute.passagesUsed.join(', ')}</>}
+                  <span className="ml-1 text-slate-400">(drawn in cyan)</span>
+                </span>
+              ) : (
+                <span className="text-slate-500">
+                  No maritime route to {selectedPartner.country} (landlocked or unsupported).
+                </span>
+              )}
+            </div>
+          )}
+
           <p className="mt-2 text-[11px] text-slate-400">
             Top {commodity?.name?.toLowerCase()} partners for {tradeCtry}
-            {tradeQ.data?.year ? ` (${tradeQ.data.year})` : ''}, drawn as lanes on the map — green =
-            exports to, red = imports from. UN Comtrade, country-level.
+            {tradeQ.data?.year ? ` (${tradeQ.data.year})` : ''} — lanes on the map (green = exports to,
+            red = imports from). Click a partner to plot the sea route. UN Comtrade, country-level.
           </p>
         </Card>
 
@@ -613,12 +689,16 @@ function TradePartnerList({
   rows,
   color,
   empty,
+  onSelect,
+  selectedIso,
 }: {
   title: string;
   arrow: string;
   rows: PortPartnerShare[];
   color: string;
   empty: string;
+  onSelect: (p: PortPartnerShare) => void;
+  selectedIso?: string;
 }) {
   return (
     <div>
@@ -630,22 +710,34 @@ function TradePartnerList({
         <p className="text-[11px] text-slate-400">{empty}</p>
       ) : (
         <ul className="space-y-1">
-          {rows.map((p) => (
-            <li key={p.iso ?? p.country} className="text-xs">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-slate-700">{p.country}</span>
-                <span className="shrink-0 tabular-nums text-slate-500">
-                  {p.sharePct}% · ${p.valueUsdB.toLocaleString('en-US', { maximumFractionDigits: 1 })}B
-                </span>
-              </div>
-              <div className="mt-0.5 h-1.5 w-full rounded bg-slate-100">
-                <div
-                  className="h-1.5 rounded"
-                  style={{ width: `${Math.min(100, p.sharePct)}%`, backgroundColor: color, opacity: 0.8 }}
-                />
-              </div>
-            </li>
-          ))}
+          {rows.map((p) => {
+            const active = !!p.iso && p.iso === selectedIso;
+            return (
+              <li key={p.iso ?? p.country}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(p)}
+                  title="Show the sea route on the map"
+                  className={`w-full rounded px-1.5 py-1 text-left text-xs transition hover:bg-slate-50 ${
+                    active ? 'bg-slate-100 ring-1 ring-cyan-400' : ''
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-slate-700">{p.country}</span>
+                    <span className="shrink-0 tabular-nums text-slate-500">
+                      {p.sharePct}% · ${p.valueUsdB.toLocaleString('en-US', { maximumFractionDigits: 1 })}B
+                    </span>
+                  </div>
+                  <div className="mt-0.5 h-1.5 w-full rounded bg-slate-100">
+                    <div
+                      className="h-1.5 rounded"
+                      style={{ width: `${Math.min(100, p.sharePct)}%`, backgroundColor: color, opacity: 0.8 }}
+                    />
+                  </div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
