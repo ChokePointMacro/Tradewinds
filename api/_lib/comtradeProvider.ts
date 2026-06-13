@@ -26,13 +26,21 @@ function apiKey(): string {
   return key;
 }
 
-async function getJson(url: string, key: string): Promise<unknown> {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Comtrade's free tier rate-limits to ~1 request/second (HTTP 429). Retry a
+// couple of times with a short backoff before giving up.
+async function getJson(url: string, key: string, attempt = 0): Promise<unknown> {
   const res = await fetch(url, {
     headers: {
       'Ocp-Apim-Subscription-Key': key,
       'User-Agent': 'Mozilla/5.0 (Tradewinds trade proxy)',
     },
   });
+  if (res.status === 429 && attempt < 3) {
+    await sleep(1200 * (attempt + 1));
+    return getJson(url, key, attempt + 1);
+  }
   if (!res.ok) throw new Error(`Comtrade HTTP ${res.status}`);
   return res.json();
 }
@@ -104,10 +112,9 @@ export async function fetchPortTrade(
   const key = apiKey();
   const hs = hsCodeFor(commodityId);
   for (const year of [TRADE_YEAR, TRADE_YEAR - 1]) {
-    const [profileRaw, partnersRaw] = await Promise.all([
-      getJson(profileUrl(hs, reporterCode, year), key),
-      getJson(partnersUrl(hs, reporterCode, year), key),
-    ]);
+    // Serial, not parallel — the free tier rate-limits to ~1 req/sec.
+    const profileRaw = await getJson(profileUrl(hs, reporterCode, year), key);
+    const partnersRaw = await getJson(partnersUrl(hs, reporterCode, year), key);
     const profile = mapItemProfile(profileRaw, year);
     const partners = mapTopPartners(partnersRaw);
     if (profile || partners.length > 0) return { profile, partners, year };

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import type { PluginOption } from 'vite';
+import { loadEnv, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import type { ServerResponse } from 'node:http';
@@ -20,6 +20,13 @@ function devApi(): PluginOption {
     name: 'dev-api',
     apply: 'serve',
     configureServer(server) {
+      // Load server-only env (.env.local) into process.env so the API handlers
+      // can read keys like COMTRADE_API_KEY in dev. Vite only exposes VITE_*
+      // vars to the client; non-prefixed vars are not on process.env otherwise.
+      const fileEnv = loadEnv(server.config.mode, process.cwd(), '');
+      for (const [k, v] of Object.entries(fileEnv)) {
+        if (process.env[k] === undefined) process.env[k] = v;
+      }
       server.middlewares.use((req, res: ServerResponse, next) => {
         const url = req.url ?? '';
         if (!url.startsWith('/api/')) return next();

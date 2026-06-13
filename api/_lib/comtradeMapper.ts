@@ -7,6 +7,8 @@
 // trade in USD billions/year — positive = net exporter, negative = net importer
 // — which is honest, universally populated, and avoids fragile kg→bbl math.
 
+import { areaName } from './comtradeAreas';
+
 // Net-trade row, structurally compatible with src/types CountryTradeBalance.
 export interface TradeBalanceRow {
   country: string;
@@ -90,9 +92,10 @@ export function mapNetTrade(
   const byReporter = new Map<string, { exports: number; imports: number }>();
   for (const entry of data) {
     const row = entry as Record<string, unknown>;
-    const reporter = typeof row.reporterDesc === 'string' ? row.reporterDesc.trim() : '';
-    if (!reporter || AGGREGATE_REPORTERS.has(reporter)) continue;
     if (num(row.reporterCode) === 0) continue; // World as reporter
+    // The data API returns null reporterDesc — resolve the name from its code.
+    const reporter = areaName(row.reporterCode, row.reporterISO, row.reporterDesc);
+    if (!reporter || AGGREGATE_REPORTERS.has(reporter)) continue;
     const flow = String(row.flowCode ?? row.flowDesc ?? '').toUpperCase();
     const value = num(row.primaryValue);
     if (value <= 0) continue;
@@ -253,7 +256,7 @@ export function mapTopPartners(
   for (const entry of data) {
     const row = entry as Record<string, unknown>;
     if (num(row.partnerCode) === 0) continue; // World aggregate
-    const partner = typeof row.partnerDesc === 'string' ? row.partnerDesc.trim() : '';
+    const partner = areaName(row.partnerCode, row.partnerISO, row.partnerDesc);
     if (!partner || AGGREGATE_REPORTERS.has(partner)) continue;
     const flow = String(row.flowCode ?? row.flowDesc ?? '').toUpperCase();
     const value = num(row.primaryValue);
