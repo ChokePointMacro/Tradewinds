@@ -1,8 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
+import { Metric } from '@/components/Metric';
+import { StatusChip } from '@/components/StatusChip';
 import { useEnergyProjects } from '@/hooks/useProjects';
 import { impliedCommodityDemand } from '@/data/projects/commodityIntensity';
+import { STATUS_META, STATUS_RANK } from '@/data/projectStatus';
+import { fmtCapacity, fmtUsdB } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import type { EnergyProject, EnergyProjectType, ProjectStatus } from '@/types';
 
@@ -15,23 +19,6 @@ const TYPE_META: Record<EnergyProjectType, { label: string; chip: string; dot: s
   storage: { label: 'Storage', chip: 'bg-emerald-100 text-emerald-800 border-emerald-300', dot: '#059669' },
   geothermal: { label: 'Geothermal', chip: 'bg-orange-100 text-orange-800 border-orange-300', dot: '#ea580c' },
   gas: { label: 'Gas', chip: 'bg-slate-200 text-slate-700 border-slate-300', dot: '#475569' },
-};
-
-const STATUS_META: Record<ProjectStatus, { label: string; chip: string }> = {
-  announced: { label: 'Announced', chip: 'bg-slate-100 text-slate-600 border-slate-300' },
-  permitting: { label: 'Permitting', chip: 'bg-amber-100 text-amber-800 border-amber-300' },
-  under_construction: { label: 'Under construction', chip: 'bg-blue-100 text-blue-800 border-blue-300' },
-  partially_operational: { label: 'Partially operational', chip: 'bg-teal-100 text-teal-800 border-teal-300' },
-  operational: { label: 'Operational', chip: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-};
-
-// Render order: live first, then build pipeline, then earliest-stage.
-const STATUS_RANK: Record<ProjectStatus, number> = {
-  operational: 0,
-  partially_operational: 1,
-  under_construction: 2,
-  permitting: 3,
-  announced: 4,
 };
 
 // Forward pipeline order for the per-type stage timeline (left → right).
@@ -65,18 +52,6 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'gas', label: 'Gas' },
 ];
 
-function fmtCapacity(mw: number): string {
-  if (mw >= 1000) {
-    const gw = mw / 1000;
-    return `${gw.toLocaleString('en-US', { maximumFractionDigits: gw % 1 === 0 ? 0 : 1 })} GW`;
-  }
-  return `${mw.toLocaleString('en-US')} MW`;
-}
-
-function fmtUsdB(n: number): string {
-  return `$${n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 1 : 0 })}B`;
-}
-
 function fmtQty(value: number, unit: string): string {
   return `${value.toLocaleString('en-US', { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`;
 }
@@ -91,15 +66,6 @@ function TypeChip({ type }: { type: EnergyProjectType }) {
   const m = TYPE_META[type];
   return (
     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${m.chip}`}>
-      {m.label}
-    </span>
-  );
-}
-
-function StatusChip({ status }: { status: ProjectStatus }) {
-  const m = STATUS_META[status];
-  return (
-    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${m.chip}`}>
       {m.label}
     </span>
   );
@@ -168,15 +134,6 @@ function ProjectDetail({ project, onClose }: { project: EnergyProject; onClose: 
         </a>
       </div>
     </Card>
-  );
-}
-
-function Metric({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-1">{children}</div>
-    </div>
   );
 }
 

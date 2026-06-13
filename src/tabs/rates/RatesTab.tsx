@@ -19,6 +19,7 @@ import { SourcedValue, type SourcedStatus } from '@/components/SourcedValue';
 import { COMMODITIES, getCommodity } from '@/data/commodities';
 import { priceSource } from '@/data/adapters';
 import { useHistory, useSpot } from '@/hooks/usePrices';
+import { fmtPrice } from '@/lib/format';
 import { forecast } from '@/lib/forecast';
 import { RANGE_DAYS, RANGE_KEYS, type RangeKey, isoDaysAgo, todayISO } from '@/lib/ranges';
 
@@ -40,10 +41,6 @@ interface ChartRow {
   median?: number;
   band80?: [number, number];
   band95?: [number, number];
-}
-
-function fmtPrice(n: number): string {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 /** Spot price card for a single commodity. Owns its own query to avoid hooks-in-loop. */

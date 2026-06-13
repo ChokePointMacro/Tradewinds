@@ -11,6 +11,7 @@ import { useProduction, useReserves, useNetTrade } from '@/hooks/useSupply';
 import { useAppState } from '@/app/appStateContext';
 import { getCommodity } from '@/data/commodities';
 import { estimateFreight, type FreightEstimate } from '@/data/cost/freight';
+import { fmtPrice as fmtVal } from '@/lib/format';
 import { VESSEL_SPEED_KN } from '@/lib/routing/vessels';
 import type { Port, Provenance, RouteRequest, RouteResult, TransportMode, VesselType } from '@/types';
 import { track } from '@/lib/analytics';
@@ -48,10 +49,6 @@ const METRIC_META: Record<
 
 const BUBBLE_MIN_R = 6;
 const BUBBLE_MAX_R = 26;
-
-function fmtVal(n: number): string {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
 
 const COLOR_A = '#0d9488';
 const COLOR_B = '#d97706';

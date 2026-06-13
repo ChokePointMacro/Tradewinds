@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
+import { Metric } from '@/components/Metric';
+import { StatusChip } from '@/components/StatusChip';
 import { useBridgePower } from '@/hooks/useProjects';
+import { STATUS_META, STATUS_RANK } from '@/data/projectStatus';
+import { fmtCapacity, fmtUsdB } from '@/lib/format';
 import { track } from '@/lib/analytics';
-import type { BridgePowerDeployment, BridgePowerType, ProjectStatus } from '@/types';
+import type { BridgePowerDeployment, BridgePowerType } from '@/types';
 
 const TYPE_META: Record<BridgePowerType, { label: string; chip: string; dot: string }> = {
   mobile_gas_turbine: { label: 'Mobile turbine', chip: 'bg-amber-100 text-amber-800 border-amber-300', dot: '#d97706' },
@@ -11,23 +15,6 @@ const TYPE_META: Record<BridgePowerType, { label: string; chip: string; dot: str
   gas_engine: { label: 'Gas engine', chip: 'bg-orange-100 text-orange-800 border-orange-300', dot: '#ea580c' },
   fuel_cell: { label: 'Fuel cell', chip: 'bg-emerald-100 text-emerald-800 border-emerald-300', dot: '#059669' },
   diesel_genset: { label: 'Diesel genset', chip: 'bg-slate-200 text-slate-700 border-slate-300', dot: '#475569' },
-};
-
-const STATUS_META: Record<ProjectStatus, { label: string; chip: string }> = {
-  announced: { label: 'Announced', chip: 'bg-slate-100 text-slate-600 border-slate-300' },
-  permitting: { label: 'Permitting', chip: 'bg-amber-100 text-amber-800 border-amber-300' },
-  under_construction: { label: 'Under construction', chip: 'bg-blue-100 text-blue-800 border-blue-300' },
-  partially_operational: { label: 'Partially operational', chip: 'bg-teal-100 text-teal-800 border-teal-300' },
-  operational: { label: 'Operational', chip: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-};
-
-// Live first, then build pipeline, then earliest-stage.
-const STATUS_RANK: Record<ProjectStatus, number> = {
-  operational: 0,
-  partially_operational: 1,
-  under_construction: 2,
-  permitting: 3,
-  announced: 4,
 };
 
 type Filter = 'all' | BridgePowerType;
@@ -41,31 +28,10 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'diesel_genset', label: 'Diesel gensets' },
 ];
 
-function fmtCapacity(mw: number): string {
-  if (mw >= 1000) {
-    const gw = mw / 1000;
-    return `${gw.toLocaleString('en-US', { maximumFractionDigits: gw % 1 === 0 ? 0 : 1 })} GW`;
-  }
-  return `${mw.toLocaleString('en-US')} MW`;
-}
-
-function fmtUsdB(n: number): string {
-  return `$${n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 1 : 0 })}B`;
-}
-
 function TypeChip({ type }: { type: BridgePowerType }) {
   const m = TYPE_META[type];
   return (
     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${m.chip}`}>
-      {m.label}
-    </span>
-  );
-}
-
-function StatusChip({ status }: { status: ProjectStatus }) {
-  const m = STATUS_META[status];
-  return (
-    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${m.chip}`}>
       {m.label}
     </span>
   );
@@ -80,15 +46,6 @@ function RoleChip({ bridge }: { bridge: boolean }) {
     <span className="inline-flex items-center rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
       Dedicated
     </span>
-  );
-}
-
-function Metric({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-1">{children}</div>
-    </div>
   );
 }
 
