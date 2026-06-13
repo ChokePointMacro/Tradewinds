@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppState } from '@/app/appStateContext';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
-import { SourcedValue } from '@/components/SourcedValue';
+import { SourcedValue, type SourcedStatus } from '@/components/SourcedValue';
 import { getCommodity } from '@/data/commodities';
-import { usePortActivity } from '@/hooks/useSupply';
-import type { CommodityPortActivity, PortRole } from '@/types';
+import { usePortActivity, usePortTrade } from '@/hooks/useSupply';
+import type { CommodityPortActivity, PortPartnerShare, PortRole } from '@/types';
 
 const ACCENT = '#0d9488';
 
@@ -80,43 +80,120 @@ function PortDetail({ port, onClose }: { port: CommodityPortActivity; onClose: (
           <div className="mt-1 text-sm text-slate-700">{port.cargoType}</div>
         </div>
       </div>
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-          Trade detail — {port.country} ({port.cargoType.toLowerCase().includes('import') ? 'import' : port.role})
-        </div>
-        <div className="grid gap-3 lg:grid-cols-3">
-          <div>
-            <div className="mb-1.5 text-xs font-medium text-slate-600">Export / import share by item</div>
-            <SourcedValue
-              status="unavailable"
-              domain="tradeByItem"
-              reason="Connect UN Comtrade (free, your key) for item composition by HS code."
-            />
-          </div>
-          <div>
-            <div className="mb-1.5 text-xs font-medium text-slate-600">Top trading partners</div>
-            <SourcedValue
-              status="unavailable"
-              domain="tradePartners"
-              reason="Connect UN Comtrade (free, your key) for partner-country shares."
-            />
-          </div>
-          <div>
-            <div className="mb-1.5 text-xs font-medium text-slate-600">Top trading companies</div>
-            <SourcedValue
-              status="unavailable"
-              domain="tradeCompanies"
-              reason="Company-level trade is paid-only — no free source exists."
-            />
-          </div>
-        </div>
-      </div>
+      <TradeDetail port={port} />
 
       <p className="mt-3 text-[11px] text-slate-400">
-        Headline throughput is curated from public port/exchange rankings. Item shares and partner
-        countries come from UN Comtrade once a key is connected; company-level data is paid-only.
+        Headline throughput is curated from public port/exchange rankings. Item profile and partner
+        countries are {port.country}-level trade from UN Comtrade (requires a key); company-level data
+        is paid-only.
       </p>
     </Card>
+  );
+}
+
+function ItemProfileBars({
+  exportSharePct,
+  exportUsdB,
+  importUsdB,
+}: {
+  exportSharePct: number;
+  exportUsdB: number;
+  importUsdB: number;
+}) {
+  const rows = [
+    { label: 'Exports', pct: exportSharePct, value: exportUsdB, color: '#059669' },
+    { label: 'Imports', pct: 100 - exportSharePct, value: importUsdB, color: '#dc2626' },
+  ];
+  return (
+    <ul className="space-y-1.5">
+      {rows.map((r) => (
+        <li key={r.label} className="text-xs">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-slate-600">{r.label}</span>
+            <span className="tabular-nums text-slate-500">
+              {r.pct}% · ${r.value.toLocaleString('en-US', { maximumFractionDigits: 1 })}B
+            </span>
+          </div>
+          <div className="mt-0.5 h-1.5 w-full rounded bg-slate-100">
+            <div className="h-1.5 rounded" style={{ width: `${r.pct}%`, backgroundColor: r.color, opacity: 0.85 }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PartnerBars({ partners }: { partners: PortPartnerShare[] }) {
+  return (
+    <ul className="space-y-1.5">
+      {partners.map((p) => (
+        <li key={p.country} className="text-xs">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-slate-600">{p.country}</span>
+            <span className="tabular-nums text-slate-500">{p.sharePct}%</span>
+          </div>
+          <div className="mt-0.5 h-1.5 w-full rounded bg-slate-100">
+            <div className="h-1.5 rounded" style={{ width: `${Math.min(100, p.sharePct)}%`, backgroundColor: '#6366f1', opacity: 0.85 }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Live-or-error trade detail (item profile + partners) from UN Comtrade. */
+function TradeDetail({ port }: { port: CommodityPortActivity }) {
+  const { data: trade, isLoading } = usePortTrade(port.commodityId, port.country);
+  const dir: 'export' | 'import' = port.role === 'import' ? 'import' : 'export';
+  const partners = (trade?.partners ?? []).filter((p) => p.direction === dir);
+
+  const itemStatus: SourcedStatus = isLoading ? 'loading' : trade?.profile ? 'live' : 'unavailable';
+  const partnerStatus: SourcedStatus = isLoading ? 'loading' : partners.length > 0 ? 'live' : 'unavailable';
+
+  return (
+    <div className="mt-5 border-t border-slate-100 pt-4">
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        Trade detail — {port.country}
+      </div>
+      <div className="grid gap-3 lg:grid-cols-3">
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-slate-600">Export / import share (this item)</div>
+          <SourcedValue
+            status={itemStatus}
+            domain="tradeByItem"
+            source={trade?.profile?.source}
+            reason="Connect UN Comtrade (free, your key) for item composition."
+          >
+            {trade?.profile && (
+              <ItemProfileBars
+                exportSharePct={trade.profile.exportSharePct}
+                exportUsdB={trade.profile.exportUsdB}
+                importUsdB={trade.profile.importUsdB}
+              />
+            )}
+          </SourcedValue>
+        </div>
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-slate-600">Top {dir} partners</div>
+          <SourcedValue
+            status={partnerStatus}
+            domain="tradePartners"
+            source="UN Comtrade"
+            reason="Connect UN Comtrade (free, your key) for partner-country shares."
+          >
+            {partners.length > 0 && <PartnerBars partners={partners} />}
+          </SourcedValue>
+        </div>
+        <div>
+          <div className="mb-1.5 text-xs font-medium text-slate-600">Top trading companies</div>
+          <SourcedValue
+            status="unavailable"
+            domain="tradeCompanies"
+            reason="Company-level trade is paid-only — no free source exists."
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 

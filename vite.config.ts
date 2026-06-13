@@ -13,6 +13,7 @@ function devApi(): PluginOption {
     if (url.startsWith('/api/price/spot')) return '/api/price/spot.ts';
     if (url.startsWith('/api/price/history')) return '/api/price/history.ts';
     if (url.startsWith('/api/comtrade/net-trade')) return '/api/comtrade/net-trade.ts';
+    if (url.startsWith('/api/comtrade/port-trade')) return '/api/comtrade/port-trade.ts';
     return null;
   }
   return {

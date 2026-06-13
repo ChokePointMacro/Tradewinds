@@ -180,6 +180,29 @@ export interface CommodityPortActivity {
   partners?: PortTradePartner[];
 }
 
+// Ports tab "Trade detail" — a port country's item profile + top partner
+// countries for the commodity, from UN Comtrade (SOURCED, country-level).
+export interface PortItemProfile {
+  exportUsdB: number;
+  importUsdB: number;
+  exportSharePct: number;
+  year: number;
+  source: string;
+}
+
+export interface PortPartnerShare {
+  country: string;
+  sharePct: number;
+  valueUsdB: number;
+  direction: 'export' | 'import';
+}
+
+export interface PortTradeDetail {
+  profile: PortItemProfile | null;
+  partners: PortPartnerShare[];
+  year: number;
+}
+
 // Projects tab: US energy & advanced-manufacturing infrastructure tracker
 // (nuclear, data centers, semiconductor fabs, and other generation), 2022
 // forward. Every figure is publicly reported (SOURCED) and carries a named

@@ -233,7 +233,7 @@ const TRADE_BY_ITEM: DomainSources = {
       provider: 'UN',
       tier: 'free',
       access: 'free-key',
-      status: 'planned',
+      status: 'live',
       coverage: 'Item composition by HS code, country-level (free API key)',
     },
     {
@@ -260,7 +260,7 @@ const TRADE_PARTNERS: DomainSources = {
       provider: 'UN',
       tier: 'free',
       access: 'free-key',
-      status: 'planned',
+      status: 'live',
       coverage: 'Bilateral partner-country shares (free API key)',
     },
     {

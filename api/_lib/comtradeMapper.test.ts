@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { COMTRADE_HS, hsCodeFor, isComtradeCommodity, mapNetTrade } from './comtradeMapper';
+import {
+  COMTRADE_HS,
+  hsCodeFor,
+  isComtradeCommodity,
+  mapItemProfile,
+  mapNetTrade,
+  mapTopPartners,
+  reporterCodeFor,
+} from './comtradeMapper';
 
 // Minimal Comtrade `get` row shape (partner=World, one HS code, one year).
 function row(reporterDesc: string, flowCode: 'X' | 'M', primaryValue: number, reporterCode = 1) {
@@ -69,5 +77,65 @@ describe('comtradeMapper', () => {
     expect(mapNetTrade('gold', {}, 2024)).toEqual([]);
     expect(mapNetTrade('gold', { data: [] }, 2024)).toEqual([]);
     expect(mapNetTrade('gold', { data: 'nope' }, 2024)).toEqual([]);
+  });
+
+  describe('reporterCodeFor', () => {
+    it('resolves port countries (incl. Comtrade-specific codes) and aliases', () => {
+      expect(reporterCodeFor('United States')).toBe(842);
+      expect(reporterCodeFor('Norway')).toBe(579); // Comtrade variant, not 578
+      expect(reporterCodeFor('France')).toBe(251); // Comtrade variant, not 250
+      expect(reporterCodeFor('UAE')).toBe(784); // alias of United Arab Emirates
+      expect(reporterCodeFor('South Korea')).toBe(410);
+    });
+    it('returns undefined for non-country region labels', () => {
+      expect(reporterCodeFor('East Africa')).toBeUndefined();
+      expect(reporterCodeFor('Europe')).toBeUndefined();
+    });
+  });
+
+  describe('mapItemProfile', () => {
+    it('computes export/import totals and export share', () => {
+      const raw = {
+        data: [
+          { flowCode: 'X', primaryValue: 30e9, partnerCode: 0 },
+          { flowCode: 'M', primaryValue: 10e9, partnerCode: 0 },
+        ],
+      };
+      const p = mapItemProfile(raw, 2024)!;
+      expect(p.exportUsdB).toBe(30);
+      expect(p.importUsdB).toBe(10);
+      expect(p.exportSharePct).toBe(75);
+      expect(p.source).toBe('UN Comtrade');
+    });
+    it('returns null when there is no trade', () => {
+      expect(mapItemProfile({ data: [] }, 2024)).toBeNull();
+      expect(mapItemProfile({}, 2024)).toBeNull();
+    });
+  });
+
+  describe('mapTopPartners', () => {
+    const raw = {
+      data: [
+        { partnerDesc: 'China', partnerCode: 156, flowCode: 'X', primaryValue: 60e9 },
+        { partnerDesc: 'India', partnerCode: 699, flowCode: 'X', primaryValue: 40e9 },
+        { partnerDesc: 'World', partnerCode: 0, flowCode: 'X', primaryValue: 100e9 },
+        { partnerDesc: 'Japan', partnerCode: 392, flowCode: 'M', primaryValue: 20e9 },
+      ],
+    };
+    it('ranks partners by value and computes per-flow shares, dropping World', () => {
+      const rows = mapTopPartners(raw);
+      const exports = rows.filter((r) => r.direction === 'export');
+      expect(exports.map((r) => r.country)).toEqual(['China', 'India']);
+      expect(exports[0]!.sharePct).toBe(60);
+      expect(exports[1]!.sharePct).toBe(40);
+      expect(rows.some((r) => r.country === 'World')).toBe(false);
+      const imports = rows.filter((r) => r.direction === 'import');
+      expect(imports).toHaveLength(1);
+      expect(imports[0]!.country).toBe('Japan');
+    });
+    it('returns empty for malformed input', () => {
+      expect(mapTopPartners({})).toEqual([]);
+      expect(mapTopPartners({ data: 'nope' })).toEqual([]);
+    });
   });
 });

@@ -135,3 +135,149 @@ export function mapNetTrade(
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Port trade detail — per-reporter item profile + top partner countries.
+// Powers the Ports-tab "Trade detail" sections. Reporter (the port's country)
+// must resolve to a Comtrade M49 code; non-country labels (regions) don't.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Port-country display name → Comtrade reporter code (M49, Comtrade variants).
+// Verified against comtradeapi.un.org reference (Norway 579, France 251,
+// Switzerland 757, India 699 are Comtrade-specific).
+export const COMTRADE_REPORTERS: Record<string, number> = {
+  'United States': 842,
+  China: 156,
+  'Saudi Arabia': 682,
+  Russia: 643,
+  Netherlands: 528,
+  'United Arab Emirates': 784,
+  UAE: 784,
+  Singapore: 702,
+  India: 699,
+  Japan: 392,
+  'South Korea': 410,
+  Germany: 276,
+  Brazil: 76,
+  Chile: 152,
+  Peru: 604,
+  Mexico: 484,
+  Australia: 36,
+  Indonesia: 360,
+  Philippines: 608,
+  'South Africa': 710,
+  Canada: 124,
+  'United Kingdom': 826,
+  Switzerland: 757,
+  Poland: 616,
+  Nigeria: 566,
+  Iraq: 368,
+  France: 251,
+  Belgium: 56,
+  Spain: 724,
+  Italy: 380,
+  Malaysia: 458,
+  Norway: 579,
+  Egypt: 818,
+  'Hong Kong': 344,
+  Turkey: 792,
+  Pakistan: 586,
+  Vietnam: 704,
+  Finland: 246,
+  'DR Congo': 180,
+};
+
+export function reporterCodeFor(country: string): number | undefined {
+  return COMTRADE_REPORTERS[country];
+}
+
+export interface ItemTradeProfile {
+  exportUsdB: number;
+  importUsdB: number;
+  exportSharePct: number; // exports / (exports + imports) × 100
+  year: number;
+  source: string;
+}
+
+export interface PartnerShareRow {
+  country: string;
+  sharePct: number; // share of this flow's partner total
+  valueUsdB: number;
+  direction: 'export' | 'import';
+}
+
+/**
+ * Item profile for one reporter+commodity: total export ('X') and import ('M')
+ * value (USD bn) and the export share. Expects a reporterCode + partnerCode=0
+ * (World), flowCode=X,M query for one HS code & year.
+ */
+export function mapItemProfile(raw: unknown, year: number): ItemTradeProfile | null {
+  const data = asRecord(raw).data;
+  if (!Array.isArray(data)) return null;
+  let exports = 0;
+  let imports = 0;
+  for (const entry of data) {
+    const row = entry as Record<string, unknown>;
+    const flow = String(row.flowCode ?? row.flowDesc ?? '').toUpperCase();
+    const value = num(row.primaryValue);
+    if (value <= 0) continue;
+    if (flow.startsWith('X')) exports += value;
+    else if (flow.startsWith('M')) imports += value;
+  }
+  if (exports <= 0 && imports <= 0) return null;
+  const total = exports + imports;
+  return {
+    exportUsdB: round2(exports / 1e9),
+    importUsdB: round2(imports / 1e9),
+    exportSharePct: Math.round((exports / total) * 100),
+    year,
+    source: 'UN Comtrade',
+  };
+}
+
+/**
+ * Top partner countries for one reporter+commodity, split by flow. Expects a
+ * reporterCode + all-partners (partnerCode omitted), flowCode=X,M query. Drops
+ * World/aggregate partners and ranks the rest by value within each flow.
+ */
+export function mapTopPartners(
+  raw: unknown,
+  opts: { topPerFlow?: number } = {},
+): PartnerShareRow[] {
+  const topPerFlow = opts.topPerFlow ?? 5;
+  const data = asRecord(raw).data;
+  if (!Array.isArray(data)) return [];
+
+  // { exports, imports } raw-USD per partner.
+  const byPartner = new Map<string, { exports: number; imports: number }>();
+  for (const entry of data) {
+    const row = entry as Record<string, unknown>;
+    if (num(row.partnerCode) === 0) continue; // World aggregate
+    const partner = typeof row.partnerDesc === 'string' ? row.partnerDesc.trim() : '';
+    if (!partner || AGGREGATE_REPORTERS.has(partner)) continue;
+    const flow = String(row.flowCode ?? row.flowDesc ?? '').toUpperCase();
+    const value = num(row.primaryValue);
+    if (value <= 0) continue;
+    const acc = byPartner.get(partner) ?? { exports: 0, imports: 0 };
+    if (flow.startsWith('X')) acc.exports += value;
+    else if (flow.startsWith('M')) acc.imports += value;
+    byPartner.set(partner, acc);
+  }
+
+  const pick = (dir: 'export' | 'import'): PartnerShareRow[] => {
+    const entries = [...byPartner.entries()]
+      .map(([country, v]) => ({ country, value: dir === 'export' ? v.exports : v.imports }))
+      .filter((e) => e.value > 0)
+      .sort((a, b) => b.value - a.value);
+    const total = entries.reduce((s, e) => s + e.value, 0);
+    if (total <= 0) return [];
+    return entries.slice(0, topPerFlow).map((e) => ({
+      country: e.country,
+      sharePct: Math.round((e.value / total) * 100),
+      valueUsdB: round2(e.value / 1e9),
+      direction: dir,
+    }));
+  };
+
+  return [...pick('export'), ...pick('import')];
+}

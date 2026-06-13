@@ -2,7 +2,15 @@
 // (never exposed to the client) and returns normalized net-trade rows via the
 // pure comtradeMapper. The new Comtrade API (comtradeapi.un.org) requires a free
 // subscription key passed in the Ocp-Apim-Subscription-Key header.
-import { hsCodeFor, mapNetTrade, type TradeBalanceRow } from './comtradeMapper';
+import {
+  hsCodeFor,
+  mapItemProfile,
+  mapNetTrade,
+  mapTopPartners,
+  type ItemTradeProfile,
+  type PartnerShareRow,
+  type TradeBalanceRow,
+} from './comtradeMapper';
 
 const COMTRADE_BASE = 'https://comtradeapi.un.org/data/v1/get/C/A/HS';
 
@@ -53,4 +61,56 @@ export async function fetchNetTrade(commodityId: string): Promise<TradeBalanceRo
     if (rows.length > 0) return rows;
   }
   return [];
+}
+
+export interface PortTradeResult {
+  profile: ItemTradeProfile | null;
+  partners: PartnerShareRow[];
+  year: number;
+}
+
+function profileUrl(hs: string, reporterCode: number, year: number): string {
+  // One reporter vs World (partnerCode=0), both flows → export/import totals.
+  const qs = new URLSearchParams({
+    reporterCode: String(reporterCode),
+    cmdCode: hs,
+    flowCode: 'X,M',
+    partnerCode: '0',
+    period: String(year),
+  });
+  return `${COMTRADE_BASE}?${qs.toString()}`;
+}
+
+function partnersUrl(hs: string, reporterCode: number, year: number): string {
+  // One reporter, all partners (partnerCode omitted), both flows → bilateral.
+  const qs = new URLSearchParams({
+    reporterCode: String(reporterCode),
+    cmdCode: hs,
+    flowCode: 'X,M',
+    period: String(year),
+  });
+  return `${COMTRADE_BASE}?${qs.toString()}`;
+}
+
+/**
+ * Fetch a port country's trade detail for a commodity: the export/import item
+ * profile plus top partner countries (both flows). Tries TRADE_YEAR, then the
+ * prior year if empty.
+ */
+export async function fetchPortTrade(
+  commodityId: string,
+  reporterCode: number,
+): Promise<PortTradeResult> {
+  const key = apiKey();
+  const hs = hsCodeFor(commodityId);
+  for (const year of [TRADE_YEAR, TRADE_YEAR - 1]) {
+    const [profileRaw, partnersRaw] = await Promise.all([
+      getJson(profileUrl(hs, reporterCode, year), key),
+      getJson(partnersUrl(hs, reporterCode, year), key),
+    ]);
+    const profile = mapItemProfile(profileRaw, year);
+    const partners = mapTopPartners(partnersRaw);
+    if (profile || partners.length > 0) return { profile, partners, year };
+  }
+  return { profile: null, partners: [], year: TRADE_YEAR };
 }
