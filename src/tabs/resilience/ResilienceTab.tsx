@@ -271,7 +271,9 @@ export function ResilienceTab() {
             <Card
               title="Supplier concentration"
               subtitle={`HHI ${result.hhi.toLocaleString('en-US')} · top producer ${result.topProducerSharePct.toFixed(0)}%`}
-              right={<ProvenanceBadge provenance="SOURCED" source="USGS/EIA (seed)" />}
+              right={
+                <ProvenanceBadge provenance="SOURCED" source={production?.[0]?.source ?? 'USGS / EIA'} />
+              }
             >
               <ProducerBars producers={result.producers} />
               <p className="mt-3 text-[11px] text-slate-400">
@@ -325,9 +327,9 @@ export function ResilienceTab() {
               operations (latent passage severity); the disruption simulator overlays active closures.
               The country-risk index is an illustrative composite of governance stability and
               trade-route alignment, not a sourced index; chokepoint criticality weights are modeled
-              estimates of seaborne-flow dependence. Producer shares derive from curated USGS/EIA seed
-              data. Treat the score as a relative comparison across commodities, not an absolute risk
-              figure.
+              estimates of seaborne-flow dependence. Producer shares derive from USGS Mineral Commodity
+              Summaries / EIA production data. Treat the score as a relative comparison across
+              commodities, not an absolute risk figure.
             </p>
           </Card>
         </>

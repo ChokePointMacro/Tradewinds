@@ -119,6 +119,8 @@ export interface CountryProduction {
   amount: number;
   unit: string;
   year: number;
+  source?: string; // named agency dataset (USGS MCS, EIA)
+  sourceUrl?: string;
 }
 
 export interface CountryReserves {
@@ -126,6 +128,8 @@ export interface CountryReserves {
   amount: number;
   unit: string;
   year: number;
+  source?: string;
+  sourceUrl?: string;
 }
 
 // Net trade balance: positive = net exporter, negative = net importer.

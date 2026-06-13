@@ -31,13 +31,13 @@ const METRIC_META: Record<
     label: 'Production',
     subtitle: 'Annual output by country',
     provenance: 'SOURCED',
-    source: 'USGS/EIA (seed)',
+    source: 'USGS / EIA',
   },
   reserves: {
     label: 'Reserves',
     subtitle: 'Estimated reserves by country',
     provenance: 'SOURCED',
-    source: 'USGS/EIA (seed)',
+    source: 'USGS / EIA',
   },
   netTrade: {
     label: 'Net trade',
@@ -175,19 +175,22 @@ export function RouteMapTab() {
     return [...rows].sort((a, b) => b.value - a.value);
   }, [metric, production, reserves, netTrade]);
 
-  // Net trade can be live (SOURCED, UN Comtrade) or seed (MODELED) depending on
-  // the `live-trade` flag and fallback; derive the badge from the rows so it
-  // matches what's actually shown. Other metrics use their static meta.
+  // Derive the badge from the actual rows so it matches what's shown: production
+  // & reserves carry their real agency source (USGS MCS / EIA); net trade can be
+  // live (SOURCED, UN Comtrade) or seed (MODELED) per the `live-trade` flag.
   const metricBadge = useMemo<{ provenance: Provenance; source?: string }>(() => {
-    if (metric !== 'netTrade') {
-      return { provenance: METRIC_META[metric].provenance, source: METRIC_META[metric].source };
+    if (metric === 'production') {
+      return { provenance: 'SOURCED', source: production?.[0]?.source ?? METRIC_META.production.source };
+    }
+    if (metric === 'reserves') {
+      return { provenance: 'SOURCED', source: reserves?.[0]?.source ?? METRIC_META.reserves.source };
     }
     const first = netTrade?.[0];
     return {
       provenance: first?.provenance ?? METRIC_META.netTrade.provenance,
       source: first?.source ?? METRIC_META.netTrade.source,
     };
-  }, [metric, netTrade]);
+  }, [metric, production, reserves, netTrade]);
 
   const supplyMaxAbs = useMemo(
     () => Math.max(1, ...supplyRows.map((r) => Math.abs(r.value))),

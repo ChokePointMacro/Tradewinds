@@ -113,10 +113,77 @@ const PRICE: DomainSources = {
   ],
 };
 
+// ── Production by country ──
+// Official free agency datasets (USGS metals + EIA oil) are the live default;
+// paid intelligence providers are opt-in upgrades.
+const PRODUCTION: DomainSources = {
+  domain: 'production',
+  label: 'Production by country',
+  defaultId: 'official',
+  options: [
+    {
+      id: 'official',
+      name: 'USGS MCS / EIA',
+      provider: 'USGS & U.S. EIA',
+      tier: 'free',
+      access: 'keyless',
+      status: 'live',
+      coverage: 'Mine production (USGS) + oil/products (EIA), annual',
+    },
+    {
+      id: 'woodmac',
+      name: 'Wood Mackenzie',
+      provider: 'Wood Mackenzie',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Asset-level mine & field production',
+    },
+    {
+      id: 'cru',
+      name: 'CRU Group',
+      provider: 'CRU',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Metals supply intelligence',
+    },
+  ],
+};
+
+// ── Reserves by country ──
+const RESERVES: DomainSources = {
+  domain: 'reserves',
+  label: 'Reserves by country',
+  defaultId: 'official',
+  options: [
+    {
+      id: 'official',
+      name: 'USGS MCS / EIA',
+      provider: 'USGS & U.S. EIA',
+      tier: 'free',
+      access: 'keyless',
+      status: 'live',
+      coverage: 'Reserves (USGS metals) + proved reserves (EIA oil), annual',
+    },
+    {
+      id: 'woodmac',
+      name: 'Wood Mackenzie',
+      provider: 'Wood Mackenzie',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Asset-level reserves',
+    },
+  ],
+};
+
 // Only domains with a populated catalog are wired so far. Others are added as
 // each tab is converted off mock (see PRODUCTION_AUDIT.md).
 const REGISTRY: Partial<Record<SourceDomain, DomainSources>> = {
   price: PRICE,
+  production: PRODUCTION,
+  reserves: RESERVES,
 };
 
 export function getDomainSources(domain: SourceDomain): DomainSources | undefined {
