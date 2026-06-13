@@ -69,6 +69,75 @@ export const COST_PARAMETERS: CostParameter[] = [
   { key: 'diesel.freight_ws_pct', commodityId: 'diesel', label: 'Worldscale % of flat', value: 130, unit: '%', provenance: 'MODELED', sourceNote: 'Baltic Exchange (clean)', min: 10, max: 500 },
   { key: 'diesel.bunker_cost', commodityId: 'diesel', label: 'Bunker fuel component', value: 5, unit: 'USD/bbl', provenance: 'MODELED', sourceNote: 'Ship & Bunker', min: 0, max: 30 },
   { key: 'diesel.storage_cost', commodityId: 'diesel', label: 'Distribution & storage', value: 2, unit: 'USD/bbl', provenance: 'MODELED', sourceNote: 'terminal/rack rates', min: 0, max: 15 },
+
+  // Neodymium / NdPr (USD/kg oxide unless noted)
+  { key: 'neodymium.mining', commodityId: 'neodymium', label: 'Mining', value: 6, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'USGS, MP Materials / Lynas reports', min: 0, max: 40 },
+  { key: 'neodymium.beneficiation', commodityId: 'neodymium', label: 'Beneficiation', value: 4, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'producer disclosures', min: 0, max: 30 },
+  { key: 'neodymium.separation', commodityId: 'neodymium', label: 'Separation (solvent extraction)', value: 18, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'Adamas Intelligence, producer cost build-ups', min: 0, max: 80 },
+  { key: 'neodymium.reduction', commodityId: 'neodymium', label: 'Oxide → metal/alloy', value: 6, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'metal/alloy converters', min: 0, max: 40 },
+  { key: 'neodymium.freight_pct', commodityId: 'neodymium', label: 'Secured freight (% value)', value: 0.5, unit: '% of value', provenance: 'MODELED', sourceNote: 'logistics quotes', min: 0, max: 3 },
+
+  // Dysprosium (USD/kg oxide unless noted) — heavy RE, costlier separation
+  { key: 'dysprosium.mining', commodityId: 'dysprosium', label: 'Mining', value: 12, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'USGS, ionic-clay producers', min: 0, max: 80 },
+  { key: 'dysprosium.beneficiation', commodityId: 'dysprosium', label: 'Beneficiation', value: 8, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'producer disclosures', min: 0, max: 60 },
+  { key: 'dysprosium.separation', commodityId: 'dysprosium', label: 'Separation (solvent extraction)', value: 55, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'Adamas Intelligence (heavy RE)', min: 0, max: 200 },
+  { key: 'dysprosium.reduction', commodityId: 'dysprosium', label: 'Oxide → metal/alloy', value: 15, unit: 'USD/kg', provenance: 'MODELED', sourceNote: 'metal/alloy converters', min: 0, max: 100 },
+  { key: 'dysprosium.freight_pct', commodityId: 'dysprosium', label: 'Secured freight (% value)', value: 0.5, unit: '% of value', provenance: 'MODELED', sourceNote: 'logistics quotes', min: 0, max: 3 },
+
+  // Wheat (USD/tonne)
+  { key: 'wheat.seed', commodityId: 'wheat', label: 'Seed & inputs', value: 18, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS Commodity Costs & Returns', min: 0, max: 120 },
+  { key: 'wheat.fertilizer_chem', commodityId: 'wheat', label: 'Fertilizer & crop protection', value: 45, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 200 },
+  { key: 'wheat.field_ops', commodityId: 'wheat', label: 'Field operations', value: 48, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS (machinery, fuel, labor)', min: 0, max: 200 },
+  { key: 'wheat.land_overhead', commodityId: 'wheat', label: 'Land & overhead', value: 60, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS (rent, overhead)', min: 0, max: 250 },
+  { key: 'wheat.drying_storage', commodityId: 'wheat', label: 'Drying & elevator storage', value: 12, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'country-elevator tariffs', min: 0, max: 60 },
+  { key: 'wheat.inland_freight', commodityId: 'wheat', label: 'Inland transport', value: 25, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA Grain Transportation Report', min: 0, max: 120 },
+  { key: 'wheat.ocean_freight', commodityId: 'wheat', label: 'Ocean freight', value: 35, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'Baltic Dry / IGC freight', min: 0, max: 150 },
+
+  // Corn (USD/tonne)
+  { key: 'corn.seed', commodityId: 'corn', label: 'Seed & inputs', value: 30, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 150 },
+  { key: 'corn.fertilizer_chem', commodityId: 'corn', label: 'Fertilizer & crop protection', value: 52, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 200 },
+  { key: 'corn.field_ops', commodityId: 'corn', label: 'Field operations', value: 45, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 200 },
+  { key: 'corn.land_overhead', commodityId: 'corn', label: 'Land & overhead', value: 70, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 250 },
+  { key: 'corn.drying_storage', commodityId: 'corn', label: 'Drying & elevator storage', value: 12, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'country-elevator tariffs', min: 0, max: 60 },
+  { key: 'corn.inland_freight', commodityId: 'corn', label: 'Inland transport', value: 22, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA Grain Transportation Report', min: 0, max: 120 },
+  { key: 'corn.ocean_freight', commodityId: 'corn', label: 'Ocean freight', value: 35, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'Baltic Dry / IGC freight', min: 0, max: 150 },
+
+  // Soybeans (USD/tonne)
+  { key: 'soybeans.seed', commodityId: 'soybeans', label: 'Seed & inputs', value: 38, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 150 },
+  { key: 'soybeans.fertilizer_chem', commodityId: 'soybeans', label: 'Fertilizer & crop protection', value: 22, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 150 },
+  { key: 'soybeans.field_ops', commodityId: 'soybeans', label: 'Field operations', value: 48, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 200 },
+  { key: 'soybeans.land_overhead', commodityId: 'soybeans', label: 'Land & overhead', value: 85, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 300 },
+  { key: 'soybeans.drying_storage', commodityId: 'soybeans', label: 'Drying & elevator storage', value: 12, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'country-elevator tariffs', min: 0, max: 60 },
+  { key: 'soybeans.inland_freight', commodityId: 'soybeans', label: 'Inland transport', value: 25, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA Grain Transportation Report', min: 0, max: 120 },
+  { key: 'soybeans.ocean_freight', commodityId: 'soybeans', label: 'Ocean freight', value: 38, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'Baltic Dry / IGC freight', min: 0, max: 150 },
+
+  // Beef / live cattle (USD/tonne liveweight)
+  { key: 'beef.feeder', commodityId: 'beef', label: 'Feeder animal', value: 1900, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS cattle costs & returns', min: 0, max: 6000 },
+  { key: 'beef.feed', commodityId: 'beef', label: 'Feed', value: 1500, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS (ration)', min: 0, max: 5000 },
+  { key: 'beef.labor_vet', commodityId: 'beef', label: 'Labor, vet & yardage', value: 400, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 2000 },
+  { key: 'beef.processing', commodityId: 'beef', label: 'Processing & packing', value: 650, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA AMS, packer margins', min: 0, max: 3000 },
+  { key: 'beef.cold_freight', commodityId: 'beef', label: 'Cold-chain logistics', value: 300, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'reefer freight quotes', min: 0, max: 1500 },
+
+  // Pork / lean hogs (USD/tonne)
+  { key: 'pork.feeder', commodityId: 'pork', label: 'Feeder animal', value: 400, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS hog costs & returns', min: 0, max: 2000 },
+  { key: 'pork.feed', commodityId: 'pork', label: 'Feed', value: 900, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS (ration)', min: 0, max: 3000 },
+  { key: 'pork.labor_vet', commodityId: 'pork', label: 'Labor, vet & yardage', value: 200, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA ERS', min: 0, max: 1500 },
+  { key: 'pork.processing', commodityId: 'pork', label: 'Processing & packing', value: 350, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA AMS, packer margins', min: 0, max: 2000 },
+  { key: 'pork.cold_freight', commodityId: 'pork', label: 'Cold-chain logistics', value: 200, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'reefer freight quotes', min: 0, max: 1500 },
+
+  // Eggs (USD/tonne)
+  { key: 'eggs.pullet', commodityId: 'eggs', label: 'Pullet', value: 300, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA / industry layer economics', min: 0, max: 1500 },
+  { key: 'eggs.feed', commodityId: 'eggs', label: 'Feed', value: 1200, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'USDA (layer ration)', min: 0, max: 4000 },
+  { key: 'eggs.labor', commodityId: 'eggs', label: 'Labor & farm overhead', value: 250, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'industry economics', min: 0, max: 1500 },
+  { key: 'eggs.grading', commodityId: 'eggs', label: 'Grading & packing', value: 200, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'packing-plant costs', min: 0, max: 1500 },
+  { key: 'eggs.cold_freight', commodityId: 'eggs', label: 'Cold-chain logistics', value: 200, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'reefer freight quotes', min: 0, max: 1500 },
+
+  // Fertilizer / urea (USD/tonne)
+  { key: 'fertilizer.gas_feedstock', commodityId: 'fertilizer', label: 'Natural-gas feedstock', value: 150, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'World Bank / industry urea cost build-up', min: 0, max: 700 },
+  { key: 'fertilizer.ammonia_synthesis', commodityId: 'fertilizer', label: 'Ammonia synthesis', value: 60, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'producer cost build-up', min: 0, max: 300 },
+  { key: 'fertilizer.granulation', commodityId: 'fertilizer', label: 'Urea granulation', value: 30, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'producer cost build-up', min: 0, max: 150 },
+  { key: 'fertilizer.bagging', commodityId: 'fertilizer', label: 'Bagging & handling', value: 20, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'terminal handling', min: 0, max: 100 },
+  { key: 'fertilizer.freight', commodityId: 'fertilizer', label: 'Ocean freight', value: 40, unit: 'USD/tonne', provenance: 'MODELED', sourceNote: 'Baltic / fertilizer freight', min: 0, max: 200 },
 ];
 
 export function paramsForCommodity(commodityId: string): CostParameter[] {

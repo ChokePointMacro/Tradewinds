@@ -6,8 +6,23 @@ import { copper, copperChain } from './copper';
 import { nickel, nickelChain } from './nickel';
 import { palladium, palladiumChain } from './palladium';
 import { diesel, dieselChain } from './diesel';
-import { neodymium, dysprosium } from './rareEarths';
-import { wheat, corn, soybeans, beef, pork, eggs, fertilizer } from './agriculture';
+import { neodymium, dysprosium, neodymiumChain, dysprosiumChain } from './rareEarths';
+import {
+  wheat,
+  corn,
+  soybeans,
+  beef,
+  pork,
+  eggs,
+  fertilizer,
+  wheatChain,
+  cornChain,
+  soybeansChain,
+  beefChain,
+  porkChain,
+  eggsChain,
+  ureaChain,
+} from './agriculture';
 
 export const COMMODITIES: Commodity[] = [
   oil,
@@ -36,6 +51,15 @@ export const CHAINS: Record<string, SupplyChainStep[]> = {
   palladium: palladiumChain,
   copper: copperChain,
   nickel: nickelChain,
+  neodymium: neodymiumChain,
+  dysprosium: dysprosiumChain,
+  wheat: wheatChain,
+  corn: cornChain,
+  soybeans: soybeansChain,
+  beef: beefChain,
+  pork: porkChain,
+  eggs: eggsChain,
+  fertilizer: ureaChain,
 };
 
 export function getCommodity(id: string): Commodity | undefined {
