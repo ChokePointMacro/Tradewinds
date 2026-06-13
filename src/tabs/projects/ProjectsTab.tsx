@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { useEnergyProjects } from '@/hooks/useProjects';
+import { impliedCommodityDemand } from '@/data/projects/commodityIntensity';
 import { track } from '@/lib/analytics';
 import type { EnergyProject, EnergyProjectType, ProjectStatus } from '@/types';
 
@@ -56,6 +57,16 @@ function fmtCapacity(mw: number): string {
 function fmtUsdB(n: number): string {
   return `$${n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 1 : 0 })}B`;
 }
+
+function fmtQty(value: number, unit: string): string {
+  return `${value.toLocaleString('en-US', { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`;
+}
+
+// Accent styling per bridged commodity (matches the metal's identity).
+const COMMODITY_ACCENT: Record<string, { chip: string; dot: string }> = {
+  copper: { chip: 'bg-orange-100 text-orange-800 border-orange-300', dot: '#ea580c' },
+  silver: { chip: 'bg-slate-200 text-slate-700 border-slate-300', dot: '#64748b' },
+};
 
 function TypeChip({ type }: { type: EnergyProjectType }) {
   const m = TYPE_META[type];
@@ -183,6 +194,10 @@ export function ProjectsTab() {
     return { capacityMw, investment };
   }, [shown]);
 
+  // Bridge to the commodity engine: implied copper/silver demand from the
+  // currently-shown buildout (MODELED capacity × metal-intensity factors).
+  const demand = useMemo(() => impliedCommodityDemand(shown), [shown]);
+
   const selected = shown.find((p) => p.id === selectedId) ?? all.find((p) => p.id === selectedId) ?? null;
 
   return (
@@ -242,6 +257,50 @@ export function ProjectsTab() {
           </span>
         </div>
       </Card>
+
+      {demand.length > 0 && (
+        <Card
+          title="Implied commodity demand"
+          subtitle="What this buildout means for the metals Tradewinds prices"
+          right={<ProvenanceBadge provenance="MODELED" source="capacity × metal intensity" />}
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {demand.map((d) => {
+              const accent = COMMODITY_ACCENT[d.commodityId];
+              return (
+                <div key={d.commodityId} className="rounded-lg border border-slate-200 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: accent?.dot ?? '#64748b' }}
+                      aria-hidden
+                    />
+                    <span className="text-sm font-semibold text-slate-900">{d.label}</span>
+                  </div>
+                  <div className="mt-1 text-2xl font-semibold tabular-nums leading-none text-slate-900">
+                    {fmtQty(d.displayValue, d.unit)}
+                  </div>
+                  <div className="mt-1 text-[11px] text-slate-500">{d.basisNote}</div>
+                  <div className="mt-2 text-[11px] text-slate-400">
+                    from{' '}
+                    <span className="font-semibold tabular-nums text-slate-600">
+                      {d.contributingProjects}
+                    </span>{' '}
+                    project{d.contributingProjects === 1 ? '' : 's'} ·{' '}
+                    <span className="tabular-nums">{fmtCapacity(d.contributingMw)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+            Order-of-magnitude estimates: each project&apos;s disclosed capacity × a published
+            metal-intensity factor (copper ~1.1–20 t/MW by technology, IEA 2021; silver ~0.015 t/MW
+            for c-Si solar). Reflects the current filter. Co-located battery storage (nickel/lithium)
+            is noted in projects but not separately sized, so it is excluded rather than estimated.
+          </p>
+        </Card>
+      )}
 
       {selected && <ProjectDetail project={selected} onClose={() => setSelectedId(null)} />}
 
