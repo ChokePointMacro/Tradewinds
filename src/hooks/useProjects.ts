@@ -7,3 +7,10 @@ export function useEnergyProjects() {
     queryFn: () => projectsDataSource.getEnergyProjects(),
   });
 }
+
+export function useBridgePower() {
+  return useQuery({
+    queryKey: ['bridgePower'],
+    queryFn: () => projectsDataSource.getBridgePower(),
+  });
+}

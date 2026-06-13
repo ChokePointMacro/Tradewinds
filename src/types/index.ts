@@ -213,6 +213,38 @@ export interface EnergyProject {
   sourceUrl: string;
 }
 
+// Bridge Power tab: on-site / "behind-the-meter" generation that data centers
+// are deploying to get electrons NOW while permanent generation (and grid
+// interconnection) is still years out. Standalone — NOT commodity-scoped.
+// Every figure is publicly reported (SOURCED) with a named source + URL.
+export type BridgePowerType =
+  | 'mobile_gas_turbine' // trailer-mounted / aeroderivative, rapidly deployable
+  | 'gas_turbine' // fixed simple- or combined-cycle frame turbines, co-located
+  | 'gas_engine' // natural-gas reciprocating engines (Cat, INNIO, Cummins)
+  | 'fuel_cell' // solid-oxide fuel cells (Bloom Energy)
+  | 'diesel_genset'; // diesel reciprocating sets (the legacy backup tier)
+
+export interface BridgePowerDeployment {
+  id: string;
+  name: string;
+  type: BridgePowerType;
+  provider: string; // turbine/genset/fuel-cell supplier or power provider
+  offtaker?: string; // the data center / hyperscaler being served
+  state: string; // US state, or 'Multiple' / 'Undisclosed' when not sited
+  location?: string; // city / county
+  capacityMw?: number; // announced/installed electrical capacity (when reported)
+  unitsNote?: string; // e.g. '35 mobile turbines', '7 × 7HA.02'
+  status: ProjectStatus; // reuses the energy-project pipeline enum
+  announcedYear?: number;
+  onlineYear?: number;
+  bridge: boolean; // true = explicitly temporary/interim; false = dedicated permanent
+  bridgeNote?: string; // what it bridges to, or why it's permanent
+  investmentUsdB?: number; // deal/capex value when reported
+  note: string;
+  source: string;
+  sourceUrl: string;
+}
+
 export interface Scenario {
   id: string;
   name: string;

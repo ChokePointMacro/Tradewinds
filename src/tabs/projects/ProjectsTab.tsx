@@ -34,6 +34,23 @@ const STATUS_RANK: Record<ProjectStatus, number> = {
   announced: 4,
 };
 
+// Forward pipeline order for the per-type stage timeline (left → right).
+const STAGE_AXIS: { status: ProjectStatus; short: string }[] = [
+  { status: 'announced', short: 'Announced' },
+  { status: 'permitting', short: 'Permitting' },
+  { status: 'under_construction', short: 'Construction' },
+  { status: 'partially_operational', short: 'Partial' },
+  { status: 'operational', short: 'Online' },
+];
+
+const STAGE_INDEX: Record<ProjectStatus, number> = {
+  announced: 0,
+  permitting: 1,
+  under_construction: 2,
+  partially_operational: 3,
+  operational: 4,
+};
+
 type Filter = 'all' | EnergyProjectType;
 
 const FILTERS: { id: Filter; label: string }[] = [
@@ -163,6 +180,111 @@ function Metric({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
+// A 5-stop progress rail showing how far a project has advanced through the
+// build pipeline. Nodes are filled up to (and including) the current stage.
+function StageRail({ status, color }: { status: ProjectStatus; color: string }) {
+  const idx = STAGE_INDEX[status];
+  return (
+    <div className="relative py-2.5">
+      <div
+        className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-slate-200"
+        style={{ left: '10%', right: '10%' }}
+        aria-hidden
+      />
+      <div
+        className="absolute top-1/2 h-0.5 -translate-y-1/2"
+        style={{ left: '10%', width: `${idx * 20}%`, backgroundColor: color }}
+        aria-hidden
+      />
+      <div className="relative grid grid-cols-5">
+        {STAGE_AXIS.map((s, i) => {
+          const reached = i <= idx;
+          const current = i === idx;
+          return (
+            <span key={s.status} className="flex justify-center">
+              <span
+                className="rounded-full border-2"
+                style={{
+                  height: current ? 14 : 9,
+                  width: current ? 14 : 9,
+                  backgroundColor: reached ? color : '#ffffff',
+                  borderColor: reached ? color : '#cbd5e1',
+                  boxShadow: current ? `0 0 0 3px ${color}22` : undefined,
+                }}
+              />
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// One type's swimlane: a stage axis header plus a rail per project.
+function TypeTimeline({
+  type,
+  projects,
+  selectedId,
+  onSelect,
+}: {
+  type: EnergyProjectType;
+  projects: EnergyProject[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const m = TYPE_META[type];
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: m.dot }} aria-hidden />
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">{m.label}</span>
+        <span className="text-[11px] tabular-nums text-slate-400">{projects.length}</span>
+      </div>
+
+      <div className="grid grid-cols-12 items-end gap-2">
+        <div className="col-span-5 sm:col-span-4 lg:col-span-3" />
+        <div className="col-span-7 grid grid-cols-5 sm:col-span-8 lg:col-span-9">
+          {STAGE_AXIS.map((s) => (
+            <span
+              key={s.status}
+              className="text-center text-[9px] font-medium uppercase tracking-wide text-slate-400"
+            >
+              {s.short}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="divide-y divide-slate-100">
+        {projects.map((p) => {
+          const active = p.id === selectedId;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onSelect(p.id)}
+              className={`grid w-full grid-cols-12 items-center gap-2 rounded px-1 text-left transition hover:bg-slate-50 ${
+                active ? 'bg-teal-50 ring-1 ring-teal-200' : ''
+              }`}
+            >
+              <div className="col-span-5 min-w-0 sm:col-span-4 lg:col-span-3">
+                <div className="truncate text-xs font-medium text-slate-800">{p.name}</div>
+                <div className="truncate text-[10px] text-slate-400">
+                  {STATUS_META[p.status].label}
+                  {p.onlineYear ? ` · ${p.onlineYear}` : ''}
+                </div>
+              </div>
+              <div className="col-span-7 sm:col-span-8 lg:col-span-9">
+                <StageRail status={p.status} color={m.dot} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ProjectsTab() {
   const { data: projects, isLoading } = useEnergyProjects();
   const [filter, setFilter] = useState<Filter>('all');
@@ -199,6 +321,28 @@ export function ProjectsTab() {
   // Bridge to the commodity engine: implied copper/silver demand from the
   // currently-shown buildout (MODELED capacity × metal-intensity factors).
   const demand = useMemo(() => impliedCommodityDemand(shown), [shown]);
+
+  // Per-type swimlanes for the stage timeline: group the shown projects by
+  // type (in the canonical TYPE_META order) and sort each lane by pipeline
+  // stage (earliest → live) then by online year.
+  const timelineGroups = useMemo(() => {
+    const byType = new Map<EnergyProjectType, EnergyProject[]>();
+    for (const p of shown) {
+      const arr = byType.get(p.type);
+      if (arr) arr.push(p);
+      else byType.set(p.type, [p]);
+    }
+    return (Object.keys(TYPE_META) as EnergyProjectType[])
+      .filter((t) => byType.has(t))
+      .map((type) => ({
+        type,
+        projects: [...byType.get(type)!].sort((a, b) => {
+          const s = STAGE_INDEX[a.status] - STAGE_INDEX[b.status];
+          if (s !== 0) return s;
+          return (a.onlineYear ?? 9999) - (b.onlineYear ?? 9999);
+        }),
+      }));
+  }, [shown]);
 
   const selected = shown.find((p) => p.id === selectedId) ?? all.find((p) => p.id === selectedId) ?? null;
 
@@ -364,6 +508,26 @@ export function ProjectsTab() {
           );
         })}
       </div>
+
+      {timelineGroups.length > 0 && (
+        <Card
+          title="Stage timeline by type"
+          subtitle="Where each project sits in its build pipeline — announced through online"
+          right={<ProvenanceBadge provenance="SOURCED" source="public filings / press" />}
+        >
+          <div className="space-y-6">
+            {timelineGroups.map((g) => (
+              <TypeTimeline
+                key={g.type}
+                type={g.type}
+                projects={g.projects}
+                selectedId={selectedId}
+                onSelect={(id) => setSelectedId(id === selectedId ? null : id)}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

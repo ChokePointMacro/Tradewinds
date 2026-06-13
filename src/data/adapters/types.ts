@@ -1,4 +1,5 @@
 import type {
+  BridgePowerDeployment,
   CommodityPortActivity,
   CountryProduction,
   CountryReserves,
@@ -30,7 +31,9 @@ export interface SupplyDataSource {
   getPortActivity(commodityId: string): Promise<CommodityPortActivity[]>;
 }
 
-// US energy-infrastructure projects (Projects tab). Not commodity-scoped.
+// US energy-infrastructure projects (Projects tab) + data-center bridge power
+// (Bridge Power tab). Neither is commodity-scoped.
 export interface ProjectsDataSource {
   getEnergyProjects(): Promise<EnergyProject[]>;
+  getBridgePower(): Promise<BridgePowerDeployment[]>;
 }
