@@ -178,12 +178,51 @@ const RESERVES: DomainSources = {
   ],
 };
 
+// ── Port throughput ──
+// Curated public rankings are the free default; IMF PortWatch (free, AIS-based)
+// is a keyless upgrade once wired; vessel-tracking vendors are paid opt-in.
+const PORT_THROUGHPUT: DomainSources = {
+  domain: 'portThroughput',
+  label: 'Port throughput',
+  defaultId: 'rankings',
+  options: [
+    {
+      id: 'rankings',
+      name: "Port rankings (Lloyd's / WSC / EIA-JODI)",
+      provider: 'Public rankings',
+      tier: 'free',
+      access: 'keyless',
+      status: 'live',
+      coverage: 'Headline commodity throughput by port, annual',
+    },
+    {
+      id: 'portwatch',
+      name: 'IMF PortWatch',
+      provider: 'IMF',
+      tier: 'free',
+      access: 'keyless',
+      status: 'planned',
+      coverage: 'AIS-based daily port calls & trade volume',
+    },
+    {
+      id: 'kpler',
+      name: 'Kpler',
+      provider: 'Kpler',
+      tier: 'paid',
+      access: 'paid',
+      status: 'needs-key',
+      coverage: 'Vessel-tracked commodity flows by port',
+    },
+  ],
+};
+
 // Only domains with a populated catalog are wired so far. Others are added as
 // each tab is converted off mock (see PRODUCTION_AUDIT.md).
 const REGISTRY: Partial<Record<SourceDomain, DomainSources>> = {
   price: PRICE,
   production: PRODUCTION,
   reserves: RESERVES,
+  portThroughput: PORT_THROUGHPUT,
 };
 
 export function getDomainSources(domain: SourceDomain): DomainSources | undefined {

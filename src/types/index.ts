@@ -167,13 +167,17 @@ export interface CommodityPortActivity {
   lat: number;
   lng: number;
   role: PortRole;
-  volume: number; // commodity-specific throughput (SOURCED·seed)
+  volume: number; // commodity-specific throughput (SOURCED, cited dataset)
   volumeUnit: string; // 'Mbbl/d', 'kt/yr', 't/yr'
-  valueDeclaredUsdB: number; // declared trade value, USD bn/yr (MODELED)
   cargoType: string; // primary cargo descriptor
-  cargoMix: PortCargoSlice[]; // composition breakdown (MODELED)
-  partners: PortTradePartner[]; // top trading partners (MODELED)
+  source?: string; // throughput citation (port rankings)
+  sourceUrl?: string;
   year: number;
+  // DEPRECATED guesses — no longer rendered (dropped at the adapter boundary,
+  // see PRODUCTION_AUDIT.md). Kept optional so legacy seed data still types.
+  valueDeclaredUsdB?: number;
+  cargoMix?: PortCargoSlice[];
+  partners?: PortTradePartner[];
 }
 
 // Projects tab: US energy & advanced-manufacturing infrastructure tracker

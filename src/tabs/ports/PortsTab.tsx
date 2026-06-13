@@ -19,11 +19,6 @@ function fmtVol(n: number): string {
   return n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 1 : 0 });
 }
 
-function fmtUsdB(n: number): string {
-  if (n >= 100) return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}B`;
-  return `$${n.toLocaleString('en-US', { maximumFractionDigits: 1 })}B`;
-}
-
 function RoleBadge({ role }: { role: PortRole }) {
   return (
     <span
@@ -31,36 +26,6 @@ function RoleBadge({ role }: { role: PortRole }) {
     >
       {role}
     </span>
-  );
-}
-
-function ShareBars({
-  rows,
-  color = ACCENT,
-}: {
-  rows: { label: string; sharePct: number; tag?: string }[];
-  color?: string;
-}) {
-  return (
-    <ul className="space-y-1.5">
-      {rows.map((r) => (
-        <li key={r.label} className="text-xs">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-slate-600">
-              {r.label}
-              {r.tag && <span className="ml-1 text-[10px] uppercase text-slate-400">{r.tag}</span>}
-            </span>
-            <span className="tabular-nums text-slate-500">{r.sharePct}%</span>
-          </div>
-          <div className="mt-0.5 h-1.5 w-full rounded bg-slate-100">
-            <div
-              className="h-1.5 rounded"
-              style={{ width: `${Math.min(100, r.sharePct)}%`, backgroundColor: color, opacity: 0.85 }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -84,54 +49,39 @@ function PortDetail({ port, onClose }: { port: CommodityPortActivity; onClose: (
         </button>
       }
     >
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex flex-wrap items-end gap-8">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             Throughput
           </div>
-          <div className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+          <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
             {fmtVol(port.volume)}{' '}
-            <span className="text-xs font-normal text-slate-500">{port.volumeUnit}</span>
+            <span className="text-sm font-normal text-slate-500">{port.volumeUnit}</span>
           </div>
-          <div className="mt-1">
-            <ProvenanceBadge provenance="SOURCED" source="port rankings (seed)" />
+          <div className="mt-1.5 flex items-center gap-2">
+            <ProvenanceBadge provenance="SOURCED" source={port.source ?? 'Port rankings'} />
+            {port.sourceUrl && (
+              <a
+                href={port.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-teal-700 underline-offset-2 hover:underline"
+              >
+                View source ↗
+              </a>
+            )}
           </div>
         </div>
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Declared value
+            Primary cargo
           </div>
-          <div className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
-            {fmtUsdB(port.valueDeclaredUsdB)}
-            <span className="ml-1 text-xs font-normal text-slate-500">/yr</span>
-          </div>
-          <div className="mt-1">
-            <ProvenanceBadge provenance="MODELED" />
-          </div>
-        </div>
-        <div>
-          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Cargo mix <ProvenanceBadge provenance="MODELED" />
-          </div>
-          <ShareBars rows={port.cargoMix} />
-        </div>
-        <div>
-          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Trading partners <ProvenanceBadge provenance="MODELED" />
-          </div>
-          <ShareBars
-            color="#6366f1"
-            rows={port.partners.map((p) => ({
-              label: p.country,
-              sharePct: p.sharePct,
-              tag: p.direction === 'export' ? '→ dest' : '← origin',
-            }))}
-          />
+          <div className="mt-1 text-sm text-slate-700">{port.cargoType}</div>
         </div>
       </div>
       <p className="mt-3 text-[11px] text-slate-400">
-        Throughput is a curated seed figure from public port/exchange rankings; declared value, cargo
-        mix and partner shares are modeled estimates. Not a sourced trade record.
+        Headline throughput is curated from public port/exchange rankings. Declared value, cargo mix
+        and partner shares were modeled estimates with no free source and have been removed.
       </p>
     </Card>
   );
@@ -156,6 +106,7 @@ export function PortsTab() {
   const maxVol = Math.max(...ranked.map((p) => p.volume), 0.0001);
   const selected = ranked.find((p) => p.id === selectedId) ?? null;
   const year = ranked[0]?.year;
+  const source = ranked[0]?.source ?? 'Port rankings';
 
   return (
     <div className="space-y-4 p-4">
@@ -164,11 +115,11 @@ export function PortsTab() {
         subtitle={
           year ? `Ranked by ${commodity.name.toLowerCase()} throughput · ${year}` : 'Ranked by throughput'
         }
-        right={<ProvenanceBadge provenance="SOURCED" source="port rankings (seed)" />}
+        right={<ProvenanceBadge provenance="SOURCED" source={source} />}
       >
         <p className="text-xs text-slate-500">
-          Tiles show each port&apos;s commodity-specific throughput (seed), declared trade value and
-          primary cargo. Select a tile for cargo mix and top trading partners.
+          Tiles show each port&apos;s commodity-specific throughput from public rankings. Select a
+          tile for its primary cargo and source link.
         </p>
       </Card>
 
@@ -177,9 +128,7 @@ export function PortsTab() {
       {isLoading && <p className="text-sm text-slate-400">Loading ports…</p>}
       {!isLoading && ranked.length === 0 && (
         <Card>
-          <p className="text-sm text-slate-500">
-            No port data seeded for {commodity.name} yet.
-          </p>
+          <p className="text-sm text-slate-500">No port data for {commodity.name} yet.</p>
         </Card>
       )}
 
@@ -207,19 +156,11 @@ export function PortsTab() {
                 <RoleBadge role={port.role} />
               </div>
 
-              <div className="mt-3 flex items-end justify-between gap-2">
-                <div>
-                  <div className="text-lg font-semibold tabular-nums leading-none text-slate-900">
-                    {fmtVol(port.volume)}
-                  </div>
-                  <div className="text-[11px] text-slate-400">{port.volumeUnit}</div>
+              <div className="mt-3">
+                <div className="text-lg font-semibold tabular-nums leading-none text-slate-900">
+                  {fmtVol(port.volume)}
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-semibold tabular-nums text-slate-700">
-                    {fmtUsdB(port.valueDeclaredUsdB)}
-                  </div>
-                  <div className="text-[11px] text-slate-400">declared/yr</div>
-                </div>
+                <div className="text-[11px] text-slate-400">{port.volumeUnit}</div>
               </div>
 
               <div className="mt-2 h-1.5 w-full rounded bg-slate-100">

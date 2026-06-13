@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { COMMODITIES } from '@/data/commodities';
-import { PORT_ACTIVITY, portActivityFor } from './portActivity';
+import { portActivityFor } from './portActivity';
 
-const ALL = Object.values(PORT_ACTIVITY).flat();
+const ALL = COMMODITIES.flatMap((c) => portActivityFor(c.id));
 
-describe('port-activity seed data', () => {
+describe('port-activity dataset', () => {
   it('covers every registered commodity', () => {
     for (const c of COMMODITIES) {
       expect(portActivityFor(c.id).length, `${c.id} should have ports`).toBeGreaterThan(0);
@@ -12,42 +12,32 @@ describe('port-activity seed data', () => {
   });
 
   it('tags every port with its own commodityId', () => {
-    for (const [commodityId, ports] of Object.entries(PORT_ACTIVITY)) {
-      for (const p of ports) expect(p.commodityId).toBe(commodityId);
+    for (const c of COMMODITIES) {
+      for (const p of portActivityFor(c.id)) expect(p.commodityId).toBe(c.id);
     }
   });
 
   it('has unique port ids within each commodity', () => {
-    for (const ports of Object.values(PORT_ACTIVITY)) {
-      const ids = ports.map((p) => p.id);
+    for (const c of COMMODITIES) {
+      const ids = portActivityFor(c.id).map((p) => p.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
   });
 
-  it('uses positive throughput and declared value', () => {
+  it('serves positive throughput with a unit and a real source citation', () => {
     for (const p of ALL) {
       expect(p.volume).toBeGreaterThan(0);
-      expect(p.valueDeclaredUsdB).toBeGreaterThan(0);
       expect(p.volumeUnit.length).toBeGreaterThan(0);
+      expect(p.source).toBeTruthy();
+      expect(p.sourceUrl?.startsWith('https://')).toBe(true);
     }
   });
 
-  it('cargo-mix shares sum to ~100% per port', () => {
+  it('drops the modeled guess fields (declared value, cargo mix, partners)', () => {
     for (const p of ALL) {
-      const sum = p.cargoMix.reduce((s, c) => s + c.sharePct, 0);
-      expect(sum, `${p.id} cargo mix`).toBeCloseTo(100, 0);
-    }
-  });
-
-  it('lists 3+ trading partners with sane shares', () => {
-    for (const p of ALL) {
-      expect(p.partners.length).toBeGreaterThanOrEqual(3);
-      const total = p.partners.reduce((s, x) => s + x.sharePct, 0);
-      expect(total).toBeGreaterThan(0);
-      expect(total).toBeLessThanOrEqual(100);
-      for (const partner of p.partners) {
-        expect(['export', 'import']).toContain(partner.direction);
-      }
+      expect(p.valueDeclaredUsdB).toBeUndefined();
+      expect(p.cargoMix).toBeUndefined();
+      expect(p.partners).toBeUndefined();
     }
   });
 

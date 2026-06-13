@@ -296,6 +296,29 @@ export const PORT_ACTIVITY: Record<string, CommodityPortActivity[]> = {
   ],
 };
 
+// Throughput is curated from public port/exchange rankings. The declared-value,
+// cargo-mix and trading-partner fields in the seed were MODELED guesses with no
+// free source — they are DROPPED here at the adapter boundary so they never reach
+// the UI (per PRODUCTION_AUDIT.md). Only the cited throughput is served.
+const PORT_SOURCE = {
+  source: "Port throughput rankings (Lloyd's List · WSC · EIA/JODI)",
+  sourceUrl: 'https://www.worldshipping.org/top-50-ports',
+};
+
 export function portActivityFor(commodityId: string): CommodityPortActivity[] {
-  return PORT_ACTIVITY[commodityId] ?? [];
+  return (PORT_ACTIVITY[commodityId] ?? []).map((p) => ({
+    id: p.id,
+    commodityId: p.commodityId,
+    name: p.name,
+    country: p.country,
+    lat: p.lat,
+    lng: p.lng,
+    role: p.role,
+    volume: p.volume,
+    volumeUnit: p.volumeUnit,
+    cargoType: p.cargoType,
+    year: p.year,
+    source: PORT_SOURCE.source,
+    sourceUrl: PORT_SOURCE.sourceUrl,
+  }));
 }
