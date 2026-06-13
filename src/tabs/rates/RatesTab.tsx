@@ -31,6 +31,15 @@ const COLORS: Record<string, string> = {
   palladium: '#7c3aed',
   copper: '#c2410c',
   nickel: '#0369a1',
+  neodymium: '#9333ea',
+  dysprosium: '#6d28d9',
+  wheat: '#ca8a04',
+  corn: '#eab308',
+  soybeans: '#65a30d',
+  beef: '#b91c1c',
+  pork: '#db2777',
+  eggs: '#f59e0b',
+  fertilizer: '#0891b2',
 };
 
 const FORECAST_HORIZON_DAYS = 90;

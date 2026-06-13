@@ -107,6 +107,33 @@ const CHOKEPOINT_EXPOSURE: Record<string, { id: string; criticality: number; not
     { id: 'malacca', criticality: 0.06, note: 'Modeled: some industrial flows into Asia.' },
     { id: 'panama', criticality: 0.05, note: 'Modeled: Latin American flows.' },
   ],
+  // Food inputs — MODELED estimates (no free per-commodity transit source).
+  wheat: [
+    { id: 'suez', criticality: 0.15, note: 'Modeled: Black Sea / Mideast wheat into Asia.' },
+    { id: 'babelmandeb', criticality: 0.12, note: 'Modeled: Red Sea routing toward Asia.' },
+    { id: 'panama', criticality: 0.08, note: 'Modeled: US Gulf wheat to the Pacific.' },
+  ],
+  corn: [
+    { id: 'panama', criticality: 0.2, note: 'Modeled: US Gulf corn to East Asia.' },
+    { id: 'malacca', criticality: 0.1, note: 'Modeled: approach to Chinese / SE-Asian buyers.' },
+  ],
+  soybeans: [
+    { id: 'panama', criticality: 0.22, note: 'Modeled: US Gulf soy to China.' },
+    { id: 'malacca', criticality: 0.1, note: 'Modeled: approach to Chinese crushers.' },
+  ],
+  beef: [
+    { id: 'panama', criticality: 0.12, note: 'Modeled: Americas reefer beef to Asia.' },
+    { id: 'malacca', criticality: 0.1, note: 'Modeled: approach to East-Asian markets.' },
+  ],
+  pork: [
+    { id: 'panama', criticality: 0.1, note: 'Modeled: Americas reefer pork to Asia.' },
+    { id: 'malacca', criticality: 0.1, note: 'Modeled: approach to East-Asian markets.' },
+  ],
+  fertilizer: [
+    { id: 'hormuz', criticality: 0.12, note: 'Modeled: Gulf urea / ammonia exports.' },
+    { id: 'suez', criticality: 0.12, note: 'Modeled: Mideast / Black Sea fertilizer to Asia.' },
+    { id: 'panama', criticality: 0.1, note: 'Modeled: US Gulf fertilizer flows.' },
+  ],
   gold: [],
   palladium: [],
 };
