@@ -294,6 +294,47 @@ export const PORT_ACTIVITY: Record<string, CommodityPortActivity[]> = {
       year: YEAR,
     },
   ],
+
+  // ── Food inputs (agribulk / reefer / fertilizer export hubs) ──
+  wheat: [
+    { id: 'novorossiysk_wheat', commodityId: 'wheat', name: 'Novorossiysk', country: 'Russia', lat: 44.72, lng: 37.79, role: 'export', volume: 20, volumeUnit: 'Mt/yr', cargoType: 'Wheat (bulk)', year: YEAR },
+    { id: 'constanta_wheat', commodityId: 'wheat', name: 'Constanța', country: 'Romania', lat: 44.17, lng: 28.65, role: 'hub', volume: 15, volumeUnit: 'Mt/yr', cargoType: 'Wheat (Black Sea hub)', year: YEAR },
+    { id: 'vancouver_wheat', commodityId: 'wheat', name: 'Vancouver', country: 'Canada', lat: 49.29, lng: -123.1, role: 'export', volume: 12, volumeUnit: 'Mt/yr', cargoType: 'Wheat (bulk)', year: YEAR },
+    { id: 'neworleans_wheat', commodityId: 'wheat', name: 'New Orleans (US Gulf)', country: 'United States', lat: 29.95, lng: -90.07, role: 'export', volume: 10, volumeUnit: 'Mt/yr', cargoType: 'Wheat (bulk)', year: YEAR },
+    { id: 'rouen_wheat', commodityId: 'wheat', name: 'Rouen', country: 'France', lat: 49.44, lng: 1.1, role: 'export', volume: 8, volumeUnit: 'Mt/yr', cargoType: 'Wheat (bulk)', year: YEAR },
+  ],
+  corn: [
+    { id: 'neworleans_corn', commodityId: 'corn', name: 'New Orleans (US Gulf)', country: 'United States', lat: 29.95, lng: -90.07, role: 'export', volume: 30, volumeUnit: 'Mt/yr', cargoType: 'Corn (bulk)', year: YEAR },
+    { id: 'santos_corn', commodityId: 'corn', name: 'Santos', country: 'Brazil', lat: -23.96, lng: -46.33, role: 'export', volume: 20, volumeUnit: 'Mt/yr', cargoType: 'Corn (bulk)', year: YEAR },
+    { id: 'rosario_corn', commodityId: 'corn', name: 'Rosario (Up-River)', country: 'Argentina', lat: -32.95, lng: -60.65, role: 'export', volume: 18, volumeUnit: 'Mt/yr', cargoType: 'Corn (bulk)', year: YEAR },
+    { id: 'paranagua_corn', commodityId: 'corn', name: 'Paranaguá', country: 'Brazil', lat: -25.52, lng: -48.51, role: 'export', volume: 12, volumeUnit: 'Mt/yr', cargoType: 'Corn (bulk)', year: YEAR },
+    { id: 'constanta_corn', commodityId: 'corn', name: 'Constanța', country: 'Romania', lat: 44.17, lng: 28.65, role: 'hub', volume: 8, volumeUnit: 'Mt/yr', cargoType: 'Corn (Black Sea hub)', year: YEAR },
+  ],
+  soybeans: [
+    { id: 'santos_soy', commodityId: 'soybeans', name: 'Santos', country: 'Brazil', lat: -23.96, lng: -46.33, role: 'export', volume: 35, volumeUnit: 'Mt/yr', cargoType: 'Soybeans (bulk)', year: YEAR },
+    { id: 'neworleans_soy', commodityId: 'soybeans', name: 'New Orleans (US Gulf)', country: 'United States', lat: 29.95, lng: -90.07, role: 'export', volume: 28, volumeUnit: 'Mt/yr', cargoType: 'Soybeans (bulk)', year: YEAR },
+    { id: 'paranagua_soy', commodityId: 'soybeans', name: 'Paranaguá', country: 'Brazil', lat: -25.52, lng: -48.51, role: 'export', volume: 20, volumeUnit: 'Mt/yr', cargoType: 'Soybeans (bulk)', year: YEAR },
+    { id: 'kalama_soy', commodityId: 'soybeans', name: 'Kalama (PNW)', country: 'United States', lat: 46.0, lng: -122.84, role: 'export', volume: 12, volumeUnit: 'Mt/yr', cargoType: 'Soybeans (bulk)', year: YEAR },
+    { id: 'rosario_soy', commodityId: 'soybeans', name: 'Rosario (Up-River)', country: 'Argentina', lat: -32.95, lng: -60.65, role: 'export', volume: 10, volumeUnit: 'Mt/yr', cargoType: 'Soybeans / meal', year: YEAR },
+  ],
+  beef: [
+    { id: 'santos_beef', commodityId: 'beef', name: 'Santos', country: 'Brazil', lat: -23.96, lng: -46.33, role: 'export', volume: 2.5, volumeUnit: 'Mt/yr', cargoType: 'Beef (reefer)', year: YEAR },
+    { id: 'qingdao_beef', commodityId: 'beef', name: 'Qingdao', country: 'China', lat: 36.07, lng: 120.38, role: 'import', volume: 2.0, volumeUnit: 'Mt/yr', cargoType: 'Beef (reefer import)', year: YEAR },
+    { id: 'rotterdam_beef', commodityId: 'beef', name: 'Rotterdam', country: 'Netherlands', lat: 51.95, lng: 4.14, role: 'hub', volume: 1.0, volumeUnit: 'Mt/yr', cargoType: 'Beef (reefer hub)', year: YEAR },
+    { id: 'buenosaires_beef', commodityId: 'beef', name: 'Buenos Aires', country: 'Argentina', lat: -34.6, lng: -58.37, role: 'export', volume: 0.8, volumeUnit: 'Mt/yr', cargoType: 'Beef (reefer)', year: YEAR },
+  ],
+  pork: [
+    { id: 'qingdao_pork', commodityId: 'pork', name: 'Qingdao', country: 'China', lat: 36.07, lng: 120.38, role: 'import', volume: 2.0, volumeUnit: 'Mt/yr', cargoType: 'Pork (reefer import)', year: YEAR },
+    { id: 'rotterdam_pork', commodityId: 'pork', name: 'Rotterdam', country: 'Netherlands', lat: 51.95, lng: 4.14, role: 'hub', volume: 1.0, volumeUnit: 'Mt/yr', cargoType: 'Pork (reefer hub)', year: YEAR },
+    { id: 'tokyo_pork', commodityId: 'pork', name: 'Tokyo', country: 'Japan', lat: 35.65, lng: 139.84, role: 'import', volume: 1.0, volumeUnit: 'Mt/yr', cargoType: 'Pork (reefer import)', year: YEAR },
+    { id: 'hamburg_pork', commodityId: 'pork', name: 'Hamburg', country: 'Germany', lat: 53.55, lng: 9.99, role: 'export', volume: 0.8, volumeUnit: 'Mt/yr', cargoType: 'Pork (reefer)', year: YEAR },
+  ],
+  fertilizer: [
+    { id: 'paranagua_fert', commodityId: 'fertilizer', name: 'Paranaguá', country: 'Brazil', lat: -25.52, lng: -48.51, role: 'import', volume: 6, volumeUnit: 'Mt/yr', cargoType: 'Urea / NPK (import)', year: YEAR },
+    { id: 'jubail_fert', commodityId: 'fertilizer', name: 'Jubail', country: 'Saudi Arabia', lat: 27.0, lng: 49.66, role: 'export', volume: 5, volumeUnit: 'Mt/yr', cargoType: 'Urea (export)', year: YEAR },
+    { id: 'tampa_fert', commodityId: 'fertilizer', name: 'Tampa', country: 'United States', lat: 27.95, lng: -82.45, role: 'hub', volume: 4, volumeUnit: 'Mt/yr', cargoType: 'Fertilizer (Gulf hub)', year: YEAR },
+    { id: 'yuzhny_fert', commodityId: 'fertilizer', name: 'Pivdennyi (Yuzhny)', country: 'Ukraine', lat: 46.62, lng: 31.0, role: 'export', volume: 3, volumeUnit: 'Mt/yr', cargoType: 'Urea / ammonia (export)', year: YEAR },
+  ],
 };
 
 // Throughput is curated from public port/exchange rankings. The declared-value,

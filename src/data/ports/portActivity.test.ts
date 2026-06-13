@@ -1,9 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { portActivityFor } from './portActivity';
 
-// Commodities with seeded port throughput. Newer commodities (rare earths, food)
-// have no free port dataset yet and intentionally return [] (source-or-error).
-const PORT_COMMODITIES = ['crude_oil', 'diesel', 'gold', 'silver', 'palladium', 'copper', 'nickel'];
+// Commodities with seeded port throughput. Eggs and rare earths have no port
+// dataset yet and intentionally return [] (source-or-error).
+const PORT_COMMODITIES = [
+  'crude_oil',
+  'diesel',
+  'gold',
+  'silver',
+  'palladium',
+  'copper',
+  'nickel',
+  'wheat',
+  'corn',
+  'soybeans',
+  'beef',
+  'pork',
+  'fertilizer',
+];
 const ALL = PORT_COMMODITIES.flatMap((id) => portActivityFor(id));
 
 describe('port-activity dataset', () => {
