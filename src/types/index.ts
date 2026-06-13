@@ -136,6 +136,38 @@ export interface CountryTradeBalance {
   year: number;
 }
 
+// Port-activity tiles (Ports tab). Headline throughput is SOURCED-shaped seed
+// data; declared value, cargo mix and trading-partner shares are MODELED.
+export type PortRole = 'export' | 'import' | 'hub';
+
+export interface PortCargoSlice {
+  label: string; // e.g. 'Crude', 'Condensate', 'Fuel oil'
+  sharePct: number; // share of this port's commodity throughput (MODELED)
+}
+
+export interface PortTradePartner {
+  country: string;
+  sharePct: number; // share of this port's commodity flow (MODELED)
+  direction: 'export' | 'import';
+}
+
+export interface CommodityPortActivity {
+  id: string;
+  commodityId: string;
+  name: string;
+  country: string;
+  lat: number;
+  lng: number;
+  role: PortRole;
+  volume: number; // commodity-specific throughput (SOURCED·seed)
+  volumeUnit: string; // 'Mbbl/d', 'kt/yr', 't/yr'
+  valueDeclaredUsdB: number; // declared trade value, USD bn/yr (MODELED)
+  cargoType: string; // primary cargo descriptor
+  cargoMix: PortCargoSlice[]; // composition breakdown (MODELED)
+  partners: PortTradePartner[]; // top trading partners (MODELED)
+  year: number;
+}
+
 export interface Scenario {
   id: string;
   name: string;

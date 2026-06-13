@@ -1,5 +1,11 @@
-import type { CountryProduction, CountryReserves, CountryTradeBalance } from '@/types';
+import type {
+  CommodityPortActivity,
+  CountryProduction,
+  CountryReserves,
+  CountryTradeBalance,
+} from '@/types';
 import type { SupplyDataSource } from '../types';
+import { portActivityFor } from '@/data/ports/portActivity';
 
 // Illustrative annual production/reserves (PRD 10.4). Live data comes from USGS
 // (metals) and EIA (oil) later; values here are SOURCED-shaped placeholders for
@@ -161,5 +167,9 @@ export class MockSupplyDataSource implements SupplyDataSource {
 
   async getNetTrade(commodityId: string): Promise<CountryTradeBalance[]> {
     return NET_TRADE[commodityId] ?? [];
+  }
+
+  async getPortActivity(commodityId: string): Promise<CommodityPortActivity[]> {
+    return portActivityFor(commodityId);
   }
 }

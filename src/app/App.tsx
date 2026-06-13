@@ -4,14 +4,16 @@ import { CommoditySelector } from '@/components/CommoditySelector';
 import { RouteMapTab } from '@/tabs/route-map/RouteMapTab';
 import { SupplyChainTab } from '@/tabs/supply-chain/SupplyChainTab';
 import { RatesTab } from '@/tabs/rates/RatesTab';
+import { PortsTab } from '@/tabs/ports/PortsTab';
 import { DATA_MODE } from '@/data/adapters';
 import { track } from '@/lib/analytics';
 
-type TabId = 'route' | 'supply' | 'rates';
+type TabId = 'route' | 'supply' | 'ports' | 'rates';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'route', label: 'Route Map' },
   { id: 'supply', label: 'Supply Chain' },
+  { id: 'ports', label: 'Ports' },
   { id: 'rates', label: 'Rates' },
 ];
 
@@ -56,6 +58,7 @@ export function App() {
         <main className="min-h-0 flex-1 overflow-auto">
           {tab === 'route' && <RouteMapTab />}
           {tab === 'supply' && <SupplyChainTab />}
+          {tab === 'ports' && <PortsTab />}
           {tab === 'rates' && <RatesTab />}
         </main>
       </div>

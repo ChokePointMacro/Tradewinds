@@ -1,4 +1,5 @@
 import type {
+  CommodityPortActivity,
   CountryProduction,
   CountryReserves,
   CountryTradeBalance,
@@ -25,4 +26,5 @@ export interface SupplyDataSource {
   getProductionByCountry(commodityId: string): Promise<CountryProduction[]>;
   getReserves(commodityId: string): Promise<CountryReserves[]>;
   getNetTrade(commodityId: string): Promise<CountryTradeBalance[]>;
+  getPortActivity(commodityId: string): Promise<CommodityPortActivity[]>;
 }

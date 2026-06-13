@@ -21,3 +21,10 @@ export function useNetTrade(commodityId: string) {
     queryFn: () => supplyDataSource.getNetTrade(commodityId),
   });
 }
+
+export function usePortActivity(commodityId: string) {
+  return useQuery({
+    queryKey: ['portActivity', commodityId],
+    queryFn: () => supplyDataSource.getPortActivity(commodityId),
+  });
+}
