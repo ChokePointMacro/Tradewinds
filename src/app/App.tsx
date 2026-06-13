@@ -5,18 +5,20 @@ import { RouteMapTab } from '@/tabs/route-map/RouteMapTab';
 import { SupplyChainTab } from '@/tabs/supply-chain/SupplyChainTab';
 import { RatesTab } from '@/tabs/rates/RatesTab';
 import { PortsTab } from '@/tabs/ports/PortsTab';
+import { ResilienceTab } from '@/tabs/resilience/ResilienceTab';
 import { ProjectsTab } from '@/tabs/projects/ProjectsTab';
 import { BridgePowerTab } from '@/tabs/bridgepower/BridgePowerTab';
 import { DATA_MODE } from '@/data/adapters';
 import { track } from '@/lib/analytics';
 
-type TabId = 'route' | 'supply' | 'ports' | 'rates' | 'projects' | 'bridge';
+type TabId = 'route' | 'supply' | 'ports' | 'rates' | 'resilience' | 'projects' | 'bridge';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'route', label: 'Route Map' },
   { id: 'supply', label: 'Supply Chain' },
   { id: 'ports', label: 'Ports' },
   { id: 'rates', label: 'Rates' },
+  { id: 'resilience', label: 'Resilience' },
   { id: 'projects', label: 'Projects' },
   { id: 'bridge', label: 'Bridge Power' },
 ];
@@ -64,6 +66,7 @@ export function App() {
           {tab === 'supply' && <SupplyChainTab />}
           {tab === 'ports' && <PortsTab />}
           {tab === 'rates' && <RatesTab />}
+          {tab === 'resilience' && <ResilienceTab />}
           {tab === 'projects' && <ProjectsTab />}
           {tab === 'bridge' && <BridgePowerTab />}
         </main>
