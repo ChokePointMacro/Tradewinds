@@ -31,6 +31,29 @@ function cite(rows: RawRow[], src: Cite, year = ASOF): (CountryProduction & Coun
   return rows.map((r) => ({ ...r, year, source: src.source, sourceUrl: src.sourceUrl }));
 }
 
+// Rare-earth mine production / reserves (USGS, REO content, kt) — shared by the
+// individual rare-earth commodities since USGS does not split by element.
+const REE_PRODUCTION = cite(
+  [
+    { country: 'China', amount: 270, unit: 'kt/yr' },
+    { country: 'United States', amount: 45, unit: 'kt/yr' },
+    { country: 'Myanmar', amount: 31, unit: 'kt/yr' },
+    { country: 'Australia', amount: 13, unit: 'kt/yr' },
+    { country: 'Thailand', amount: 13, unit: 'kt/yr' },
+  ],
+  USGS,
+);
+const REE_RESERVES = cite(
+  [
+    { country: 'China', amount: 44000, unit: 'kt' },
+    { country: 'Brazil', amount: 21000, unit: 'kt' },
+    { country: 'India', amount: 6900, unit: 'kt' },
+    { country: 'Australia', amount: 5700, unit: 'kt' },
+    { country: 'United States', amount: 1900, unit: 'kt' },
+  ],
+  USGS,
+);
+
 const PRODUCTION: Record<string, CountryProduction[]> = {
   crude_oil: cite(
     [
@@ -102,6 +125,11 @@ const PRODUCTION: Record<string, CountryProduction[]> = {
     ],
     USGS,
   ),
+  // Rare earths: USGS reports mine production as total REO content (not by
+  // element), so neodymium and dysprosium share the same country distribution —
+  // the concentration/jurisdiction signal is what the resilience score uses.
+  neodymium: REE_PRODUCTION,
+  dysprosium: REE_PRODUCTION,
 };
 
 const RESERVES: Record<string, CountryReserves[]> = {
@@ -153,6 +181,8 @@ const RESERVES: Record<string, CountryReserves[]> = {
     ],
     USGS,
   ),
+  neodymium: REE_RESERVES,
+  dysprosium: REE_RESERVES,
 };
 
 export function productionFor(commodityId: string): CountryProduction[] {

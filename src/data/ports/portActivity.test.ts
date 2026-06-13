@@ -1,25 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { COMMODITIES } from '@/data/commodities';
 import { portActivityFor } from './portActivity';
 
-const ALL = COMMODITIES.flatMap((c) => portActivityFor(c.id));
+// Commodities with seeded port throughput. Newer commodities (rare earths, food)
+// have no free port dataset yet and intentionally return [] (source-or-error).
+const PORT_COMMODITIES = ['crude_oil', 'diesel', 'gold', 'silver', 'palladium', 'copper', 'nickel'];
+const ALL = PORT_COMMODITIES.flatMap((id) => portActivityFor(id));
 
 describe('port-activity dataset', () => {
-  it('covers every registered commodity', () => {
-    for (const c of COMMODITIES) {
-      expect(portActivityFor(c.id).length, `${c.id} should have ports`).toBeGreaterThan(0);
+  it('covers the seeded commodities', () => {
+    for (const id of PORT_COMMODITIES) {
+      expect(portActivityFor(id).length, `${id} should have ports`).toBeGreaterThan(0);
     }
   });
 
   it('tags every port with its own commodityId', () => {
-    for (const c of COMMODITIES) {
-      for (const p of portActivityFor(c.id)) expect(p.commodityId).toBe(c.id);
+    for (const id of PORT_COMMODITIES) {
+      for (const p of portActivityFor(id)) expect(p.commodityId).toBe(id);
     }
   });
 
   it('has unique port ids within each commodity', () => {
-    for (const c of COMMODITIES) {
-      const ids = portActivityFor(c.id).map((p) => p.id);
+    for (const id of PORT_COMMODITIES) {
+      const ids = portActivityFor(id).map((p) => p.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
   });

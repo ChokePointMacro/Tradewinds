@@ -13,7 +13,8 @@ export type CommodityCategory =
   | 'rare_earth'
   | 'gas'
   | 'chemical'
-  | 'fertilizer';
+  | 'fertilizer'
+  | 'agriculture';
 
 export type TransportMode = 'sea' | 'air';
 export type VesselType = 'VLCC' | 'Suezmax' | 'Aframax' | 'Container' | 'Bulk';

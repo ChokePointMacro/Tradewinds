@@ -6,8 +6,27 @@ import { copper, copperChain } from './copper';
 import { nickel, nickelChain } from './nickel';
 import { palladium, palladiumChain } from './palladium';
 import { diesel, dieselChain } from './diesel';
+import { neodymium, dysprosium } from './rareEarths';
+import { wheat, corn, soybeans, beef, pork, eggs, fertilizer } from './agriculture';
 
-export const COMMODITIES: Commodity[] = [oil, diesel, gold, silver, palladium, copper, nickel];
+export const COMMODITIES: Commodity[] = [
+  oil,
+  diesel,
+  gold,
+  silver,
+  palladium,
+  copper,
+  nickel,
+  neodymium,
+  dysprosium,
+  wheat,
+  corn,
+  soybeans,
+  beef,
+  pork,
+  eggs,
+  fertilizer,
+];
 
 export const CHAINS: Record<string, SupplyChainStep[]> = {
   crude_oil: oilChain,

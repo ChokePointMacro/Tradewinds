@@ -53,6 +53,11 @@ export const COMMODITY_SYMBOLS: Record<string, { symbol: string; unit: PriceUnit
   nickel: { symbol: 'NICKEL', unit: 'tonne' },
   palladium: { symbol: 'XPD', unit: 'ozt' },
   diesel: { symbol: 'ULSD', unit: 'bbl' },
+  wheat: { symbol: 'WHEAT', unit: 'tonne' },
+  corn: { symbol: 'CORN', unit: 'tonne' },
+  soybeans: { symbol: 'SOYBEAN', unit: 'tonne' },
+  beef: { symbol: 'CATTLE', unit: 'tonne' },
+  pork: { symbol: 'HOGS', unit: 'tonne' },
 };
 
 export function providerLabel(provider: ProviderId): string {
@@ -147,6 +152,11 @@ function round2(n: number): number {
 // falls back to mock pricing.
 const LB_PER_TONNE = 2204.622;
 const GAL_PER_BBL = 42;
+// Grains: CBOT futures quote US cents per bushel → USD/tonne = cents × bu/tonne / 100.
+const WHEAT_SOY_BU_PER_T = 36.7437;
+const CORN_BU_PER_T = 39.3683;
+// Livestock: CME futures quote US cents per pound → USD/tonne = cents × lb/tonne / 100.
+const CENTS_LB_TO_USD_T = LB_PER_TONNE / 100;
 
 export const YAHOO_SYMBOLS: Record<string, { symbol: string; mult: number }> = {
   crude_oil: { symbol: 'CL=F', mult: 1 }, // WTI crude front-month future
@@ -155,6 +165,11 @@ export const YAHOO_SYMBOLS: Record<string, { symbol: string; mult: number }> = {
   copper: { symbol: 'HG=F', mult: LB_PER_TONNE }, // COMEX copper (USD/lb → USD/tonne)
   palladium: { symbol: 'PA=F', mult: 1 }, // NYMEX palladium (USD/ozt)
   diesel: { symbol: 'HO=F', mult: GAL_PER_BBL }, // NYMEX ULSD/heating oil (USD/gal → USD/bbl)
+  wheat: { symbol: 'ZW=F', mult: WHEAT_SOY_BU_PER_T / 100 }, // CBOT wheat (¢/bu → USD/tonne)
+  corn: { symbol: 'ZC=F', mult: CORN_BU_PER_T / 100 }, // CBOT corn
+  soybeans: { symbol: 'ZS=F', mult: WHEAT_SOY_BU_PER_T / 100 }, // CBOT soybeans
+  beef: { symbol: 'LE=F', mult: CENTS_LB_TO_USD_T }, // CME live cattle (¢/lb → USD/tonne)
+  pork: { symbol: 'HE=F', mult: CENTS_LB_TO_USD_T }, // CME lean hogs
 };
 
 export function yahooSymbolFor(commodityId: string): string {

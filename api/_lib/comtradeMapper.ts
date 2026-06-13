@@ -30,6 +30,18 @@ export const COMTRADE_HS: Record<string, { code: string; label: string }> = {
   copper: { code: '7403', label: 'Refined copper' },
   nickel: { code: '7502', label: 'Unwrought nickel' },
   palladium: { code: '711021', label: 'Palladium, unwrought/powder' },
+  // Rare earths: HS6 does not separate individual elements, so both map to the
+  // rare-earth compounds heading (Comtrade aggregate).
+  neodymium: { code: '2846', label: 'Rare-earth compounds (Comtrade aggregate)' },
+  dysprosium: { code: '2846', label: 'Rare-earth compounds (Comtrade aggregate)' },
+  // Food inputs
+  wheat: { code: '1001', label: 'Wheat & meslin' },
+  corn: { code: '1005', label: 'Maize (corn)' },
+  soybeans: { code: '1201', label: 'Soya beans' },
+  beef: { code: '0202', label: 'Bovine meat, frozen' },
+  pork: { code: '0203', label: 'Meat of swine' },
+  eggs: { code: '0407', label: 'Birds eggs, in shell' },
+  fertilizer: { code: '310210', label: 'Urea' },
 };
 
 export function hsCodeFor(commodityId: string): string {
