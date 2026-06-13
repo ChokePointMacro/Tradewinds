@@ -6,7 +6,6 @@ import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { PORTS, getPort } from '@/data/geo/ports';
 import { CHOKEPOINTS } from '@/data/geo/chokepoints';
 import { getCentroid } from '@/data/geo/countryCentroids';
-import { centroidForIso } from '@/data/geo/worldCentroids';
 import { seaportForIso } from '@/data/geo/countrySeaports';
 import { TRADE_COUNTRIES, tradeCountry } from '@/data/geo/tradeCountries';
 import { computeSeaRoute, isRecoverableRouteError } from '@/lib/routing/searoute';
@@ -69,9 +68,25 @@ const COLOR_B = '#d97706';
 const COLOR_BASELINE = '#94a3b8';
 const LANE_EXPORT = '#059669'; // green: where the country exports TO
 const LANE_IMPORT = '#dc2626'; // red: where the country imports FROM
+const LANE_SELECTED = '#0891b2'; // cyan: the clicked partner's highlighted route
 
-function laneFeature(a: [number, number], b: [number, number]): Feature<LineString> {
-  return { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [a, b] } };
+// A computed maritime trade lane (real searoute) to one partner.
+interface TradeLane {
+  iso: string;
+  country: string;
+  sharePct: number;
+  direction: 'export' | 'import';
+  geojson: Feature<LineString>;
+  distanceNm: number;
+  durationHours: number;
+  passagesUsed: string[];
+  destLng: number;
+  destLat: number;
+}
+
+// Minimal Port for the routing engine (it only reads lng/lat).
+function mkPort(c: [number, number]): Port {
+  return { id: 'pt', name: '', country: '', lng: c[0], lat: c[1], role: ['export'] };
 }
 const VESSEL_TYPES = Object.keys(VESSEL_SPEED_KN) as VesselType[];
 const CLOSABLE = CHOKEPOINTS.filter((c) => c.passageKey !== 'cape');
@@ -264,101 +279,94 @@ export function RouteMapTab() {
     return ms;
   }, [fromPortId, toPortId, fromPortIdB, toPortIdB, compareOn, mode, closed]);
 
-  // ── Country trade lanes (UN Comtrade): where the selected country exports to
-  // and imports from, for the active commodity. Drawn as lanes on the map. ──
+  // ── Country trade (UN Comtrade): where the selected country exports to and
+  // imports from for the active commodity. Each lane is a REAL canal/strait-aware
+  // sea route (searoute) between the country's seaport and the partner's. ──
   const tradeQ = usePortTrade(commodityId, tradeCtry);
-  const tradeOrigin = centroidForIso(tradeCountry(tradeCtry)?.iso3);
-  const tradePartners = useMemo<PortPartnerShare[]>(
-    () => tradeQ.data?.partners ?? [],
-    [tradeQ.data],
-  );
+  const tradePartners = useMemo<PortPartnerShare[]>(() => tradeQ.data?.partners ?? [], [tradeQ.data]);
   const exportsTo = tradePartners.filter((p) => p.direction === 'export');
   const importsFrom = tradePartners.filter((p) => p.direction === 'import');
 
-  const laneRoutes = useMemo<RouteLayer[]>(() => {
-    if (!tradeOrigin) return [];
-    const arr: RouteLayer[] = [];
-    for (const p of tradePartners) {
-      const dest = centroidForIso(p.iso);
-      if (!dest) continue;
-      arr.push({
-        id: `lane-${p.direction}-${p.iso}`,
-        feature: laneFeature(tradeOrigin, dest),
-        color: p.direction === 'export' ? LANE_EXPORT : LANE_IMPORT,
-        dashed: p.direction === 'import',
-      });
-    }
-    return arr;
-  }, [tradeOrigin, tradePartners]);
-
-  const laneMarkers = useMemo<MapMarker[]>(() => {
-    if (!tradeOrigin) return [];
-    const ms: MapMarker[] = [
-      { id: 'tc-origin', lng: tradeOrigin[0], lat: tradeOrigin[1], color: '#0f172a', label: tradeCtry },
-    ];
-    for (const p of tradePartners) {
-      const c = centroidForIso(p.iso);
-      if (!c) continue;
-      ms.push({
-        id: `tcp-${p.direction}-${p.iso}`,
-        lng: c[0],
-        lat: c[1],
-        color: p.direction === 'export' ? LANE_EXPORT : LANE_IMPORT,
-        label: `${p.country}: ${p.direction === 'export' ? 'destination' : 'source'} ${p.sharePct}%`,
-      });
-    }
-    return ms;
-  }, [tradeOrigin, tradePartners, tradeCtry]);
-
-  // Clicking a partner computes the actual canal/strait-aware sea route between
-  // the selected country's seaport and the partner's. Reset on country change.
   useEffect(() => setSelectedPartner(null), [tradeCtry, commodityId]);
 
   const fromSeaport = seaportForIso(tradeCountry(tradeCtry)?.iso3);
-  const toSeaport = selectedPartner ? seaportForIso(selectedPartner.iso) : undefined;
+  const partnersKey = tradePartners.map((p) => `${p.direction}:${p.iso}`).join('|');
 
-  const partnerRouteQ = useQuery({
-    queryKey: ['partnerRoute', fromSeaport, toSeaport, vesselType],
-    enabled: Boolean(fromSeaport && toSeaport),
-    queryFn: async () => {
-      const mk = (c: [number, number]): Port => ({
-        id: 'pr',
-        name: '',
-        country: '',
-        lng: c[0],
-        lat: c[1],
-        role: ['export'],
-      });
-      try {
-        return await computeSeaRoute(mk(fromSeaport!), mk(toSeaport!), [], VESSEL_SPEED_KN[vesselType]);
-      } catch (err) {
-        if (await isRecoverableRouteError(err)) return null; // landlocked / no path
-        throw err;
+  // Compute the actual sea route for every partner that has a known seaport.
+  const lanesQ = useQuery({
+    queryKey: ['tradeLanes', fromSeaport, partnersKey, vesselType],
+    enabled: Boolean(fromSeaport) && tradePartners.length > 0,
+    queryFn: async (): Promise<TradeLane[]> => {
+      const out: TradeLane[] = [];
+      for (const p of tradePartners) {
+        const dest = p.iso ? seaportForIso(p.iso) : undefined;
+        if (!fromSeaport || !dest) continue; // no seaport (landlocked / unmapped)
+        try {
+          const r = await computeSeaRoute(mkPort(fromSeaport), mkPort(dest), [], VESSEL_SPEED_KN[vesselType]);
+          out.push({
+            iso: p.iso!,
+            country: p.country,
+            sharePct: p.sharePct,
+            direction: p.direction,
+            geojson: r.geojson,
+            distanceNm: r.distanceNm,
+            durationHours: r.durationHours,
+            passagesUsed: r.passagesUsed,
+            destLng: dest[0],
+            destLat: dest[1],
+          });
+        } catch (err) {
+          if (!(await isRecoverableRouteError(err))) continue; // skip unexpected too
+        }
       }
+      return out;
     },
   });
-  const partnerRoute = partnerRouteQ.data;
+  const lanes = useMemo<TradeLane[]>(() => lanesQ.data ?? [], [lanesQ.data]);
 
-  const partnerRouteLayer = useMemo<RouteLayer[]>(
-    () => (partnerRoute ? [{ id: 'partner-route', feature: partnerRoute.geojson, color: '#0891b2' }] : []),
-    [partnerRoute],
+  const selectedLane = selectedPartner
+    ? lanes.find((l) => l.iso === selectedPartner.iso && l.direction === selectedPartner.direction)
+    : undefined;
+
+  const laneRoutes = useMemo<RouteLayer[]>(
+    () =>
+      lanes.map((l) => ({
+        id: `lane-${l.direction}-${l.iso}`,
+        feature: l.geojson,
+        color: l.direction === 'export' ? LANE_EXPORT : LANE_IMPORT,
+        dashed: l.direction === 'import',
+      })),
+    [lanes],
   );
-  const partnerRouteMarkers = useMemo<MapMarker[]>(() => {
-    if (!selectedPartner || !fromSeaport || !toSeaport) return [];
-    return [
-      { id: 'pr-from', lng: fromSeaport[0], lat: fromSeaport[1], color: '#0f172a', label: `${tradeCtry} port` },
-      { id: 'pr-to', lng: toSeaport[0], lat: toSeaport[1], color: '#0891b2', label: `${selectedPartner.country} port` },
+  // Overlay the clicked partner's route in cyan on top of its lane.
+  const selectedRouteLayer = useMemo<RouteLayer[]>(
+    () => (selectedLane ? [{ id: 'sel-route', feature: selectedLane.geojson, color: LANE_SELECTED }] : []),
+    [selectedLane],
+  );
+
+  const laneMarkers = useMemo<MapMarker[]>(() => {
+    if (!fromSeaport) return [];
+    const ms: MapMarker[] = [
+      { id: 'tc-origin', lng: fromSeaport[0], lat: fromSeaport[1], color: '#0f172a', label: `${tradeCtry} port` },
     ];
-  }, [selectedPartner, fromSeaport, toSeaport, tradeCtry]);
+    for (const l of lanes) {
+      const active = l.iso === selectedPartner?.iso && l.direction === selectedPartner?.direction;
+      ms.push({
+        id: `tcp-${l.direction}-${l.iso}`,
+        lng: l.destLng,
+        lat: l.destLat,
+        color: active ? LANE_SELECTED : l.direction === 'export' ? LANE_EXPORT : LANE_IMPORT,
+        label: `${l.country}: ${l.direction === 'export' ? 'destination' : 'source'} ${l.sharePct}%`,
+      });
+    }
+    return ms;
+  }, [fromSeaport, lanes, tradeCtry, selectedPartner]);
 
   const allRoutes = useMemo(
-    () => [...mapRoutes, ...laneRoutes, ...partnerRouteLayer],
-    [mapRoutes, laneRoutes, partnerRouteLayer],
+    () => [...mapRoutes, ...laneRoutes, ...selectedRouteLayer],
+    [mapRoutes, laneRoutes, selectedRouteLayer],
   );
-  const allMarkers = useMemo(
-    () => [...mapMarkers, ...laneMarkers, ...partnerRouteMarkers],
-    [mapMarkers, laneMarkers, partnerRouteMarkers],
-  );
+  const allMarkers = useMemo(() => [...mapMarkers, ...laneMarkers], [mapMarkers, laneMarkers]);
 
   function togglePassage(passageKey: string) {
     setClosed((prev) =>
@@ -645,19 +653,21 @@ export function RouteMapTab() {
 
           {selectedPartner && (
             <div className="mt-3 rounded-md border border-cyan-200 bg-cyan-50/60 p-2 text-[11px] text-slate-600">
-              {partnerRouteQ.isFetching ? (
-                <span className="text-slate-500">Computing {tradeCtry} ↔ {selectedPartner.country} sea route…</span>
-              ) : partnerRoute ? (
+              {lanesQ.isFetching ? (
+                <span className="text-slate-500">Computing sea routes…</span>
+              ) : selectedLane ? (
                 <span>
-                  <span className="font-semibold text-cyan-800">{tradeCtry} ↔ {selectedPartner.country}</span> sea
-                  route: {Math.round(partnerRoute.distanceNm).toLocaleString('en-US')} nm ·{' '}
-                  {Math.round(partnerRoute.durationHours / 24)} days at {vesselType}
-                  {partnerRoute.passagesUsed.length > 0 && <> · via {partnerRoute.passagesUsed.join(', ')}</>}
-                  <span className="ml-1 text-slate-400">(drawn in cyan)</span>
+                  <span className="font-semibold text-cyan-800">
+                    {tradeCtry} ↔ {selectedLane.country}
+                  </span>{' '}
+                  sea route: {Math.round(selectedLane.distanceNm).toLocaleString('en-US')} nm ·{' '}
+                  {Math.round(selectedLane.durationHours / 24)} days at {vesselType}
+                  {selectedLane.passagesUsed.length > 0 && <> · via {selectedLane.passagesUsed.join(', ')}</>}
+                  <span className="ml-1 text-slate-400">(highlighted in cyan)</span>
                 </span>
               ) : (
                 <span className="text-slate-500">
-                  No maritime route to {selectedPartner.country} (landlocked or unsupported).
+                  No maritime route to {selectedPartner.country} (landlocked or unmapped port).
                 </span>
               )}
             </div>
