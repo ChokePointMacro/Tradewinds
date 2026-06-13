@@ -172,6 +172,45 @@ export interface CommodityPortActivity {
   year: number;
 }
 
+// Projects tab: US energy-infrastructure tracker (nuclear, data centers, and
+// other generation), 2022 forward. Every figure is publicly reported (SOURCED)
+// and carries a named source + URL; unverifiable fields are simply omitted
+// rather than estimated. This tab is NOT tied to the commodity selector.
+export type EnergyProjectType =
+  | 'nuclear'
+  | 'data_center'
+  | 'solar'
+  | 'wind'
+  | 'storage'
+  | 'geothermal'
+  | 'gas';
+
+export type ProjectStatus =
+  | 'announced'
+  | 'permitting'
+  | 'under_construction'
+  | 'partially_operational'
+  | 'operational';
+
+export interface EnergyProject {
+  id: string;
+  name: string;
+  type: EnergyProjectType;
+  developer: string; // owner / developer / operator
+  state: string; // US state
+  location?: string; // city / county
+  capacityMw?: number; // MW generation, or MW power draw for data centers
+  capacityNote?: string; // clarifier, e.g. '+ 380 MW/1,400 MWh storage'
+  status: ProjectStatus;
+  announcedYear?: number;
+  onlineYear?: number; // actual or expected commercial operation
+  investmentUsdB?: number; // total project capex, USD billions (when reported)
+  investmentNote?: string; // caveat when a figure isn't total capex
+  note: string; // one line on why it's notable
+  source: string; // publication
+  sourceUrl: string;
+}
+
 export interface Scenario {
   id: string;
   name: string;

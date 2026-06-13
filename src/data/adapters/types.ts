@@ -3,6 +3,7 @@ import type {
   CountryProduction,
   CountryReserves,
   CountryTradeBalance,
+  EnergyProject,
   PricePoint,
   RouteRequest,
   RouteResult,
@@ -27,4 +28,9 @@ export interface SupplyDataSource {
   getReserves(commodityId: string): Promise<CountryReserves[]>;
   getNetTrade(commodityId: string): Promise<CountryTradeBalance[]>;
   getPortActivity(commodityId: string): Promise<CommodityPortActivity[]>;
+}
+
+// US energy-infrastructure projects (Projects tab). Not commodity-scoped.
+export interface ProjectsDataSource {
+  getEnergyProjects(): Promise<EnergyProject[]>;
 }
