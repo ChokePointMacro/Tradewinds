@@ -23,6 +23,14 @@ const EIA = {
   source: 'EIA Petroleum & Other Liquids',
   sourceUrl: 'https://www.eia.gov/petroleum/data.php',
 };
+const FAO = {
+  source: 'FAOSTAT (production, 2023)',
+  sourceUrl: 'https://www.fao.org/faostat/en/#data/QCL',
+};
+const IFA = {
+  source: 'FAO/IFA fertilizer production',
+  sourceUrl: 'https://www.fao.org/faostat/en/#data/RFN',
+};
 
 type Cite = { source: string; sourceUrl: string };
 type RawRow = { country: string; amount: number; unit: string };
@@ -130,6 +138,77 @@ const PRODUCTION: Record<string, CountryProduction[]> = {
   // the concentration/jurisdiction signal is what the resilience score uses.
   neodymium: REE_PRODUCTION,
   dysprosium: REE_PRODUCTION,
+  // Food inputs — FAOSTAT top producers (2023). Reserves don't apply.
+  wheat: cite(
+    [
+      { country: 'China', amount: 137, unit: 'Mt/yr' },
+      { country: 'India', amount: 111, unit: 'Mt/yr' },
+      { country: 'Russia', amount: 92, unit: 'Mt/yr' },
+      { country: 'United States', amount: 49, unit: 'Mt/yr' },
+      { country: 'Canada', amount: 35, unit: 'Mt/yr' },
+    ],
+    FAO,
+  ),
+  corn: cite(
+    [
+      { country: 'United States', amount: 390, unit: 'Mt/yr' },
+      { country: 'China', amount: 289, unit: 'Mt/yr' },
+      { country: 'Brazil', amount: 137, unit: 'Mt/yr' },
+      { country: 'Argentina', amount: 59, unit: 'Mt/yr' },
+      { country: 'India', amount: 38, unit: 'Mt/yr' },
+    ],
+    FAO,
+  ),
+  soybeans: cite(
+    [
+      { country: 'Brazil', amount: 152, unit: 'Mt/yr' },
+      { country: 'United States', amount: 113, unit: 'Mt/yr' },
+      { country: 'Argentina', amount: 48, unit: 'Mt/yr' },
+      { country: 'China', amount: 20, unit: 'Mt/yr' },
+      { country: 'India', amount: 13, unit: 'Mt/yr' },
+    ],
+    FAO,
+  ),
+  beef: cite(
+    [
+      { country: 'United States', amount: 12.3, unit: 'Mt/yr' },
+      { country: 'Brazil', amount: 10.5, unit: 'Mt/yr' },
+      { country: 'China', amount: 7.5, unit: 'Mt/yr' },
+      { country: 'Argentina', amount: 3.1, unit: 'Mt/yr' },
+      { country: 'Australia', amount: 2.5, unit: 'Mt/yr' },
+    ],
+    FAO,
+  ),
+  pork: cite(
+    [
+      { country: 'China', amount: 57, unit: 'Mt/yr' },
+      { country: 'United States', amount: 12.4, unit: 'Mt/yr' },
+      { country: 'Spain', amount: 5.0, unit: 'Mt/yr' },
+      { country: 'Germany', amount: 4.9, unit: 'Mt/yr' },
+      { country: 'Brazil', amount: 4.5, unit: 'Mt/yr' },
+    ],
+    FAO,
+  ),
+  eggs: cite(
+    [
+      { country: 'China', amount: 35, unit: 'Mt/yr' },
+      { country: 'United States', amount: 6.6, unit: 'Mt/yr' },
+      { country: 'India', amount: 6.5, unit: 'Mt/yr' },
+      { country: 'Indonesia', amount: 5.5, unit: 'Mt/yr' },
+      { country: 'Brazil', amount: 3.5, unit: 'Mt/yr' },
+    ],
+    FAO,
+  ),
+  fertilizer: cite(
+    [
+      { country: 'China', amount: 55, unit: 'Mt/yr' },
+      { country: 'India', amount: 25, unit: 'Mt/yr' },
+      { country: 'Russia', amount: 14, unit: 'Mt/yr' },
+      { country: 'United States', amount: 13, unit: 'Mt/yr' },
+      { country: 'Indonesia', amount: 8, unit: 'Mt/yr' },
+    ],
+    IFA,
+  ),
 };
 
 const RESERVES: Record<string, CountryReserves[]> = {
