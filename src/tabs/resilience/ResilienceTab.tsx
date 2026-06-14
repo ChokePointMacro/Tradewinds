@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useAppState } from '@/app/appStateContext';
+import {
+  useClosedPassages,
+  togglePassage as togglePassageGlobal,
+  clearPassages,
+} from '@/data/disruption/closedPassages';
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { getCommodity } from '@/data/commodities';
@@ -169,9 +174,9 @@ export function ResilienceTab() {
   const commodity = getCommodity(commodityId)!;
   const { data: production, isLoading } = useProduction(commodityId);
 
-  // Disruption simulator: chokepoints the user has toggled shut.
-  const [closed, setClosed] = useState<string[]>([]);
-  useEffect(() => setClosed([]), [commodityId]);
+  // Disruption simulator — shared, app-wide closed chokepoints (also drives the
+  // Route Map route + trade lanes).
+  const closed = useClosedPassages();
 
   const baseline = useMemo(
     () => computeResilienceScore(commodityId, production ?? []),
@@ -185,11 +190,8 @@ export function ResilienceTab() {
   const delta = result && baseline ? result.score - baseline.score : 0;
 
   function togglePassage(id: string) {
-    setClosed((prev) => {
-      const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
-      track('resilience_disruption_sim', { commodity: commodityId, closed: next });
-      return next;
-    });
+    togglePassageGlobal(id);
+    track('resilience_disruption_sim', { commodity: commodityId, passage: id });
   }
 
   return (
@@ -290,7 +292,7 @@ export function ResilienceTab() {
                 result.underDisruption ? (
                   <button
                     type="button"
-                    onClick={() => setClosed([])}
+                    onClick={clearPassages}
                     className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-500 hover:bg-slate-50"
                   >
                     Reset

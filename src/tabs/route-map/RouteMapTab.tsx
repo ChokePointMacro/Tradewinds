@@ -4,7 +4,11 @@ import { MapView, type MapBubble, type MapMarker, type RouteLayer } from './MapV
 import { Card } from '@/components/Card';
 import { ProvenanceBadge } from '@/components/ProvenanceBadge';
 import { PORTS, getPort } from '@/data/geo/ports';
-import { CHOKEPOINTS } from '@/data/geo/chokepoints';
+import { CHOKEPOINTS, getChokepoint } from '@/data/geo/chokepoints';
+import {
+  useClosedPassages,
+  togglePassage as togglePassageGlobal,
+} from '@/data/disruption/closedPassages';
 import { getCentroid } from '@/data/geo/countryCentroids';
 import { seaportForIso } from '@/data/geo/countrySeaports';
 import { TRADE_COUNTRIES, tradeCountry } from '@/data/geo/tradeCountries';
@@ -123,7 +127,15 @@ export function RouteMapTab() {
   const [vesselType, setVesselType] = useState<VesselType>('VLCC');
   const [tradeCtry, setTradeCtry] = useState('United States');
   const [selectedPartner, setSelectedPartner] = useState<PortPartnerShare | null>(null);
-  const [closed, setClosed] = useState<string[]>([]);
+  // Shared, app-wide closed chokepoints (ids); also drives the Resilience score.
+  const closedIds = useClosedPassages();
+  const closed = useMemo(
+    () =>
+      closedIds
+        .map((id) => getChokepoint(id)?.passageKey)
+        .filter((k): k is string => Boolean(k)),
+    [closedIds],
+  );
   const [compareOn, setCompareOn] = useState(false);
   const [overlayOn, setOverlayOn] = useState(false);
   const [metric, setMetric] = useState<SupplyMetric>('production');
@@ -293,8 +305,10 @@ export function RouteMapTab() {
   const partnersKey = tradePartners.map((p) => `${p.direction}:${p.iso}`).join('|');
 
   // Compute the actual sea route for every partner that has a known seaport.
+  // Closed chokepoints (shared with the Resilience simulator) reroute or sever
+  // each lane — close Hormuz and Gulf lanes vanish, close Suez and they detour.
   const lanesQ = useQuery({
-    queryKey: ['tradeLanes', fromSeaport, partnersKey, vesselType],
+    queryKey: ['tradeLanes', fromSeaport, partnersKey, vesselType, closed.join(',')],
     enabled: Boolean(fromSeaport) && tradePartners.length > 0,
     queryFn: async (): Promise<TradeLane[]> => {
       const out: TradeLane[] = [];
@@ -302,7 +316,7 @@ export function RouteMapTab() {
         const dest = p.iso ? seaportForIso(p.iso) : undefined;
         if (!fromSeaport || !dest) continue; // no seaport (landlocked / unmapped)
         try {
-          const r = await computeSeaRoute(mkPort(fromSeaport), mkPort(dest), [], VESSEL_SPEED_KN[vesselType]);
+          const r = await computeSeaRoute(mkPort(fromSeaport), mkPort(dest), closed, VESSEL_SPEED_KN[vesselType]);
           out.push({
             iso: p.iso!,
             country: p.country,
@@ -368,11 +382,9 @@ export function RouteMapTab() {
   );
   const allMarkers = useMemo(() => [...mapMarkers, ...laneMarkers], [mapMarkers, laneMarkers]);
 
-  function togglePassage(passageKey: string) {
-    setClosed((prev) =>
-      prev.includes(passageKey) ? prev.filter((p) => p !== passageKey) : [...prev, passageKey],
-    );
-    track('chokepoint_toggled', { passageKey });
+  function togglePassage(id: string) {
+    togglePassageGlobal(id);
+    track('chokepoint_toggled', { id });
   }
 
   const showDiff = closed.length > 0 && mode === 'sea' && !!routeA && !!baseline;
@@ -434,8 +446,8 @@ export function RouteMapTab() {
                   <label className="flex items-center gap-2 text-sm text-slate-700">
                     <input
                       type="checkbox"
-                      checked={closed.includes(c.passageKey)}
-                      onChange={() => togglePassage(c.passageKey)}
+                      checked={closedIds.includes(c.id)}
+                      onChange={() => togglePassage(c.id)}
                     />
                     {c.name}
                   </label>
