@@ -11,7 +11,7 @@ import {
   type NormalizedPoint,
   type NormalizedSpot,
   type ProviderId,
-} from './priceMapper';
+} from './priceMapper.js';
 
 const PROVIDER_BASE: Record<ProviderId, string> = {
   yahoo: 'https://query1.finance.yahoo.com/v8/finance/chart',

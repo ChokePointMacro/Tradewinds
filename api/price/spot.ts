@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { readCache, writeCache } from '../_lib/cache';
-import { fetchSpot, ProviderUnconfiguredError } from '../_lib/provider';
-import { COMMODITY_SYMBOLS, type NormalizedSpot } from '../_lib/priceMapper';
+import { readCache, writeCache } from '../_lib/cache.js';
+import { fetchSpot, ProviderUnconfiguredError } from '../_lib/provider.js';
+import { COMMODITY_SYMBOLS, type NormalizedSpot } from '../_lib/priceMapper.js';
 
 // GET /api/price/spot?commodity=gold
 // Cache-first (15 min TTL); on provider error, serve stale cache if present.

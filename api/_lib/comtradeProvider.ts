@@ -10,7 +10,7 @@ import {
   type ItemTradeProfile,
   type PartnerShareRow,
   type TradeBalanceRow,
-} from './comtradeMapper';
+} from './comtradeMapper.js';
 
 const COMTRADE_BASE = 'https://comtradeapi.un.org/data/v1/get/C/A/HS';
 

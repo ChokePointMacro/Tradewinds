@@ -7,7 +7,7 @@
 // trade in USD billions/year — positive = net exporter, negative = net importer
 // — which is honest, universally populated, and avoids fragile kg→bbl math.
 
-import { areaIso, areaName } from './comtradeAreas';
+import { areaIso, areaName } from './comtradeAreas.js';
 
 // Net-trade row, structurally compatible with src/types CountryTradeBalance.
 export interface TradeBalanceRow {

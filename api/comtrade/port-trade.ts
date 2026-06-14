@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { isComtradeCommodity, reporterCodeFor } from '../_lib/comtradeMapper';
-import { ComtradeUnconfiguredError, fetchPortTrade } from '../_lib/comtradeProvider';
+import { isComtradeCommodity, reporterCodeFor } from '../_lib/comtradeMapper.js';
+import { ComtradeUnconfiguredError, fetchPortTrade } from '../_lib/comtradeProvider.js';
 
 // GET /api/comtrade/port-trade?commodity=crude_oil&country=Saudi%20Arabia
 // A port country's item profile (export/import split) + top partner countries

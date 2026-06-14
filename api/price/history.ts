@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { readCache, writeCache } from '../_lib/cache';
-import { fetchHistory, ProviderUnconfiguredError } from '../_lib/provider';
-import { COMMODITY_SYMBOLS, type NormalizedPoint } from '../_lib/priceMapper';
+import { readCache, writeCache } from '../_lib/cache.js';
+import { fetchHistory, ProviderUnconfiguredError } from '../_lib/provider.js';
+import { COMMODITY_SYMBOLS, type NormalizedPoint } from '../_lib/priceMapper.js';
 
 interface HistoryPayload {
   from: string;

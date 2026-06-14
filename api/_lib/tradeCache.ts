@@ -2,7 +2,7 @@
 // proxy's admin client (SERVICE ROLE key, never client-exposed). Keyed by
 // commodity; one Comtrade `all-reporters` call covers every country, so a single
 // cached row per commodity is enough. Long TTL — annual trade data is static.
-import { adminClient } from './cache';
+import { adminClient } from './cache.js';
 
 export const TRADE_TTL_MS = 24 * 60 * 60 * 1000; // 24h; annual data barely moves
 

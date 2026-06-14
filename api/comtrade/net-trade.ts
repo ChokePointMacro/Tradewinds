@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { isComtradeCommodity, type TradeBalanceRow } from '../_lib/comtradeMapper';
-import { ComtradeUnconfiguredError, fetchNetTrade } from '../_lib/comtradeProvider';
-import { readTradeCache, writeTradeCache } from '../_lib/tradeCache';
+import { isComtradeCommodity, type TradeBalanceRow } from '../_lib/comtradeMapper.js';
+import { ComtradeUnconfiguredError, fetchNetTrade } from '../_lib/comtradeProvider.js';
+import { readTradeCache, writeTradeCache } from '../_lib/tradeCache.js';
 
 // GET /api/comtrade/net-trade?commodity=crude_oil
 // Per-country net trade (USD bn/yr) from UN Comtrade. Cache-first (24h TTL);
