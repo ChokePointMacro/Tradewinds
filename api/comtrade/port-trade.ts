@@ -27,6 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(404).json({ error: 'Comtrade returned no rows' });
       return;
     }
+    // Annual data — cache each commodity+country at the edge for a day.
+    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=86400');
     res.status(200).json(result);
   } catch (err) {
     const status = err instanceof ComtradeUnconfiguredError ? 503 : 502;

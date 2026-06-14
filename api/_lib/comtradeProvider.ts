@@ -45,6 +45,20 @@ async function getJson(url: string, key: string, attempt = 0): Promise<unknown> 
   return res.json();
 }
 
+// In-memory TTL cache (per warm instance / the dev server) — cuts repeat calls
+// against Comtrade's 500/day, ~1-req/sec free tier. Annual data, so a long TTL
+// is safe. The CDN edge cache (Cache-Control on the endpoints) handles the rest.
+// Thrown errors (e.g. missing key) are NOT cached, so it works once keyed.
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+const memCache = new Map<string, { at: number; val: unknown }>();
+async function memo<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const hit = memCache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.val as T;
+  const val = await fn();
+  memCache.set(key, { at: Date.now(), val });
+  return val;
+}
+
 function buildUrl(hs: string, year: number): string {
   // reporterCode omitted = all reporters; partnerCode=0 = World; flows X+M.
   const qs = new URLSearchParams({
@@ -61,14 +75,16 @@ function buildUrl(hs: string, year: number): string {
  * Tries TRADE_YEAR, then TRADE_YEAR-1 if the first year reports no rows.
  */
 export async function fetchNetTrade(commodityId: string): Promise<TradeBalanceRow[]> {
-  const key = apiKey();
-  const hs = hsCodeFor(commodityId);
-  for (const year of [TRADE_YEAR, TRADE_YEAR - 1]) {
-    const raw = await getJson(buildUrl(hs, year), key);
-    const rows = mapNetTrade(commodityId, raw, year);
-    if (rows.length > 0) return rows;
-  }
-  return [];
+  return memo(`net:${commodityId}`, async () => {
+    const key = apiKey();
+    const hs = hsCodeFor(commodityId);
+    for (const year of [TRADE_YEAR, TRADE_YEAR - 1]) {
+      const raw = await getJson(buildUrl(hs, year), key);
+      const rows = mapNetTrade(commodityId, raw, year);
+      if (rows.length > 0) return rows;
+    }
+    return [];
+  });
 }
 
 export interface PortTradeResult {
@@ -109,15 +125,17 @@ export async function fetchPortTrade(
   commodityId: string,
   reporterCode: number,
 ): Promise<PortTradeResult> {
-  const key = apiKey();
-  const hs = hsCodeFor(commodityId);
-  for (const year of [TRADE_YEAR, TRADE_YEAR - 1]) {
-    // Serial, not parallel — the free tier rate-limits to ~1 req/sec.
-    const profileRaw = await getJson(profileUrl(hs, reporterCode, year), key);
-    const partnersRaw = await getJson(partnersUrl(hs, reporterCode, year), key);
-    const profile = mapItemProfile(profileRaw, year);
-    const partners = mapTopPartners(partnersRaw);
-    if (profile || partners.length > 0) return { profile, partners, year };
-  }
-  return { profile: null, partners: [], year: TRADE_YEAR };
+  return memo(`port:${commodityId}:${reporterCode}`, async () => {
+    const key = apiKey();
+    const hs = hsCodeFor(commodityId);
+    for (const year of [TRADE_YEAR, TRADE_YEAR - 1]) {
+      // Serial, not parallel — the free tier rate-limits to ~1 req/sec.
+      const profileRaw = await getJson(profileUrl(hs, reporterCode, year), key);
+      const partnersRaw = await getJson(partnersUrl(hs, reporterCode, year), key);
+      const profile = mapItemProfile(profileRaw, year);
+      const partners = mapTopPartners(partnersRaw);
+      if (profile || partners.length > 0) return { profile, partners, year };
+    }
+    return { profile: null, partners: [], year: TRADE_YEAR };
+  });
 }
