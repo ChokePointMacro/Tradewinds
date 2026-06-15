@@ -8,6 +8,7 @@ import { PortsTab } from '@/tabs/ports/PortsTab';
 import { ResilienceTab } from '@/tabs/resilience/ResilienceTab';
 import { ProjectsTab } from '@/tabs/projects/ProjectsTab';
 import { BridgePowerTab } from '@/tabs/bridgepower/BridgePowerTab';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DATA_MODE } from '@/data/adapters';
 import { track } from '@/lib/analytics';
 
@@ -62,13 +63,15 @@ export function App() {
         </nav>
 
         <main className="min-h-0 flex-1 overflow-auto">
-          {tab === 'route' && <RouteMapTab />}
-          {tab === 'supply' && <SupplyChainTab />}
-          {tab === 'ports' && <PortsTab />}
-          {tab === 'rates' && <RatesTab />}
-          {tab === 'resilience' && <ResilienceTab />}
-          {tab === 'projects' && <ProjectsTab />}
-          {tab === 'bridge' && <BridgePowerTab />}
+          <ErrorBoundary key={tab}>
+            {tab === 'route' && <RouteMapTab />}
+            {tab === 'supply' && <SupplyChainTab />}
+            {tab === 'ports' && <PortsTab />}
+            {tab === 'rates' && <RatesTab />}
+            {tab === 'resilience' && <ResilienceTab />}
+            {tab === 'projects' && <ProjectsTab />}
+            {tab === 'bridge' && <BridgePowerTab />}
+          </ErrorBoundary>
         </main>
       </div>
     </AppStateProvider>

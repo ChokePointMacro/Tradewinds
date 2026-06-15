@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl, { type Map as MlMap } from 'maplibre-gl';
 import type { Feature, LineString } from 'geojson';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -44,16 +44,28 @@ export function MapView({
   const routeIdsRef = useRef<string[]>([]);
   const markerObjsRef = useRef<maplibregl.Marker[]>([]);
   const bubbleObjsRef = useRef<maplibregl.Marker[]>([]);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: STYLE_URL,
-      center: [20, 25],
-      zoom: 1.4,
-      attributionControl: { compact: true },
-    });
+    // MapLibre needs WebGL; if the browser/GPU can't provide it (hardware
+    // acceleration off, remote desktop, locked-down config) `new Map()` throws.
+    // Catch it so the map area degrades to a notice instead of crashing the tab.
+    let map: MlMap;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: STYLE_URL,
+        center: [20, 25],
+        zoom: 1.4,
+        attributionControl: { compact: true },
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('MapLibre failed to initialize (WebGL unavailable?):', err);
+      setFailed(true);
+      return;
+    }
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     mapRef.current = map;
     return () => {
@@ -133,6 +145,15 @@ export function MapView({
     if (map.isStyleLoaded()) apply();
     else map.once('load', apply);
   }, [routes, markers, bubbles]);
+
+  if (failed) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-50 p-6 text-center text-xs text-slate-500">
+        Map unavailable — this browser doesn&rsquo;t support WebGL. Distances, routes, and all
+        other panels still work normally.
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="h-full w-full" />;
 }
