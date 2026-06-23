@@ -115,6 +115,46 @@ describe('computeResilienceScore', () => {
     expect(gold.score).toBeGreaterThan(crude.score);
   });
 
+  describe('processing-concentration pillar (Recommendation 1)', () => {
+    const REE = rows([
+      ['China', 270],
+      ['United States', 45],
+      ['Myanmar', 31],
+      ['Australia', 13],
+      ['Thailand', 13],
+    ]);
+
+    it('adds a fourth weighted pillar for commodities with a midstream entry', () => {
+      const r = computeResilienceScore('neodymium', REE)!;
+      expect(r.pillars).toHaveLength(4);
+      const proc = r.pillars.find((p) => p.key === 'processing');
+      expect(proc).toBeDefined();
+      const totalWeight = r.pillars.reduce((s, p) => s + p.weight, 0);
+      expect(totalWeight).toBeCloseTo(1, 5);
+      expect(r.processing).not.toBeNull();
+      expect(r.processing!.leadingCountry).toBe('China');
+    });
+
+    it('leaves the three-pillar shape untouched when no midstream data exists', () => {
+      const crude = computeResilienceScore('crude_oil', CRUDE)!;
+      expect(crude.pillars).toHaveLength(3);
+      expect(crude.processing).toBeNull();
+      expect(crude.pillars.find((p) => p.key === 'processing')).toBeUndefined();
+    });
+
+    it('overall score still equals the weighted mean once a processing pillar is present', () => {
+      const r = computeResilienceScore('neodymium', REE)!;
+      const weighted = r.pillars.reduce((s, p) => s + p.score * p.weight, 0);
+      expect(Math.abs(r.score - weighted)).toBeLessThanOrEqual(1);
+    });
+
+    it('scores a ~99% export-controlled monopoly (gallium) as a near-zero processing pillar', () => {
+      const gallium = computeResilienceScore('gallium', rows([['China', 600], ['Russia', 5]]))!;
+      const proc = gallium.pillars.find((p) => p.key === 'processing')!;
+      expect(proc.score).toBeLessThan(15);
+    });
+  });
+
   describe('disruption simulator', () => {
     it('no closures leaves the score unchanged and underDisruption false', () => {
       const base = computeResilienceScore('crude_oil', CRUDE)!;

@@ -76,3 +76,69 @@ function reeChain(id: string): SupplyChainStep[] {
 
 export const neodymiumChain = reeChain('neodymium');
 export const dysprosiumChain = reeChain('dysprosium');
+
+// Rare-earth compounds/oxides (aggregate, HS 2846). Separation (solvent
+// extraction) is the ~90% China chokepoint — same reeChain shape.
+export const reCompounds: Commodity = {
+  id: 're_compounds',
+  name: 'Rare-earth compounds',
+  category: 'rare_earth',
+  nativeUnit: 'tonne',
+  benchmark: 'RE oxide (Argus)',
+  priceSymbol: '',
+  chainTemplateId: 'chain_ree',
+};
+export const reCompoundsChain = reeChain('re_compounds');
+
+// NdFeB sintered permanent magnets (HS 8505.11) — the downstream chokepoint of
+// the rare-earth chain. Magnet-making (sintering) is ~90–94% China (IEA 2024);
+// the US/EU are ~75–98% import-dependent. Priced off NdPr-oxide content plus a
+// conversion margin (Argus/Fastmarkets, paid) → source-or-error.
+export const ndfebMagnets: Commodity = {
+  id: 'ndfeb_magnets',
+  name: 'NdFeB magnets',
+  category: 'rare_earth',
+  nativeUnit: 'tonne',
+  benchmark: 'NdFeB magnet, NdPr-linked (Argus/Fastmarkets)',
+  priceSymbol: '',
+  chainTemplateId: 'chain_magnet',
+};
+
+export const ndfebMagnetsChain: SupplyChainStep[] = [
+  {
+    id: 'ndfeb_magnets_oxide',
+    order: 1,
+    key: 'extraction',
+    label: 'Magnet rare-earth oxides',
+    description: 'NdPr oxide (+ Dy/Tb for high-temp grades) from separated rare earths.',
+    specifics: { dominantSupplier: 'China' },
+    costParamKeys: ['ndfeb_magnets.oxide'],
+  },
+  {
+    id: 'ndfeb_magnets_alloy',
+    order: 2,
+    key: 'refining',
+    label: 'Metal & strip-cast alloy',
+    description: 'Reduction of oxide to RE metal and NdFeB strip-cast alloy — China-dominated.',
+    specifics: { dominantSupplier: 'China' },
+    costParamKeys: ['ndfeb_magnets.alloy'],
+  },
+  {
+    id: 'ndfeb_magnets_sinter',
+    order: 3,
+    key: 'processing',
+    label: 'Sintering & magnet-making',
+    description: 'Mill, press, sinter, machine, coat → finished magnet — ~90–94% China (IEA), the chokepoint.',
+    specifics: { dominantSupplier: 'China (~90–94%)' },
+    costParamKeys: ['ndfeb_magnets.sintering'],
+  },
+  {
+    id: 'ndfeb_magnets_logistics',
+    order: 4,
+    key: 'storage',
+    label: 'Logistics',
+    description: 'Freight and bonded storage of finished magnets.',
+    specifics: {},
+    costParamKeys: ['ndfeb_magnets.freight'],
+  },
+];

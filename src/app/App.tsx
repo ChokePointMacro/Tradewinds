@@ -6,13 +6,22 @@ import { SupplyChainTab } from '@/tabs/supply-chain/SupplyChainTab';
 import { RatesTab } from '@/tabs/rates/RatesTab';
 import { PortsTab } from '@/tabs/ports/PortsTab';
 import { ResilienceTab } from '@/tabs/resilience/ResilienceTab';
+import { TechnologyTab } from '@/tabs/technology/TechnologyTab';
 import { ProjectsTab } from '@/tabs/projects/ProjectsTab';
 import { BridgePowerTab } from '@/tabs/bridgepower/BridgePowerTab';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DATA_MODE } from '@/data/adapters';
 import { track } from '@/lib/analytics';
 
-type TabId = 'route' | 'supply' | 'ports' | 'rates' | 'resilience' | 'projects' | 'bridge';
+type TabId =
+  | 'route'
+  | 'supply'
+  | 'ports'
+  | 'rates'
+  | 'resilience'
+  | 'technology'
+  | 'projects'
+  | 'bridge';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'route', label: 'Route Map' },
@@ -20,6 +29,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'ports', label: 'Ports' },
   { id: 'rates', label: 'Rates' },
   { id: 'resilience', label: 'Resilience' },
+  { id: 'technology', label: 'Technology' },
   { id: 'projects', label: 'Projects' },
   { id: 'bridge', label: 'Bridge Power' },
 ];
@@ -69,6 +79,7 @@ export function App() {
             {tab === 'ports' && <PortsTab />}
             {tab === 'rates' && <RatesTab />}
             {tab === 'resilience' && <ResilienceTab />}
+            {tab === 'technology' && <TechnologyTab />}
             {tab === 'projects' && <ProjectsTab />}
             {tab === 'bridge' && <BridgePowerTab />}
           </ErrorBoundary>

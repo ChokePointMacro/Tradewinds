@@ -31,6 +31,19 @@ const IFA = {
   source: 'FAO/IFA fertilizer production',
   sourceUrl: 'https://www.fao.org/faostat/en/#data/RFN',
 };
+const WNA = {
+  source: 'World Nuclear Association (uranium mining, 2024)',
+  sourceUrl:
+    'https://world-nuclear.org/information-library/nuclear-fuel-cycle/mining-of-uranium/world-uranium-mining-production',
+};
+// Industry estimates for chemicals & semiconductor materials with no single
+// official tonnage agency (Methanol Institute / ICIS / IEA / Bernreuter / SEMI).
+// Country output for several of these is poorly disclosed — treat ranks beyond
+// the leader as indicative; flagged for the owner's audit.
+const INDUSTRY = {
+  source: 'Industry estimates (Methanol Institute / ICIS / IEA / SEMI)',
+  sourceUrl: 'https://www.iea.org/reports/global-critical-minerals-outlook-2025',
+};
 
 type Cite = { source: string; sourceUrl: string };
 type RawRow = { country: string; amount: number; unit: string };
@@ -209,6 +222,159 @@ const PRODUCTION: Record<string, CountryProduction[]> = {
     ],
     IFA,
   ),
+  // ── Critical minerals (USGS MCS 2025, 2024 estimates; uranium = WNA 2024) ──
+  lithium: cite(
+    [
+      { country: 'Australia', amount: 88, unit: 'kt/yr' },
+      { country: 'Chile', amount: 49, unit: 'kt/yr' },
+      { country: 'China', amount: 41, unit: 'kt/yr' },
+      { country: 'Zimbabwe', amount: 22, unit: 'kt/yr' },
+      { country: 'Argentina', amount: 18, unit: 'kt/yr' },
+    ],
+    USGS,
+  ),
+  cobalt: cite(
+    [
+      { country: 'DR Congo', amount: 220, unit: 'kt/yr' },
+      { country: 'Indonesia', amount: 28, unit: 'kt/yr' },
+      { country: 'Russia', amount: 8.7, unit: 'kt/yr' },
+      { country: 'Canada', amount: 4.5, unit: 'kt/yr' },
+      { country: 'Philippines', amount: 3.8, unit: 'kt/yr' },
+    ],
+    USGS,
+  ),
+  graphite: cite(
+    [
+      { country: 'China', amount: 1270, unit: 'kt/yr' },
+      { country: 'Madagascar', amount: 89, unit: 'kt/yr' },
+      { country: 'Mozambique', amount: 75, unit: 'kt/yr' },
+      { country: 'Brazil', amount: 68, unit: 'kt/yr' },
+      { country: 'Russia', amount: 20, unit: 'kt/yr' },
+    ],
+    USGS,
+  ),
+  manganese: cite(
+    [
+      { country: 'South Africa', amount: 7400, unit: 'kt/yr' },
+      { country: 'Gabon', amount: 4600, unit: 'kt/yr' },
+      { country: 'Australia', amount: 2800, unit: 'kt/yr' },
+      { country: 'India', amount: 800, unit: 'kt/yr' },
+      { country: 'China', amount: 770, unit: 'kt/yr' },
+    ],
+    USGS,
+  ),
+  titanium: cite(
+    [
+      { country: 'China', amount: 220, unit: 'kt/yr' },
+      { country: 'Japan', amount: 55, unit: 'kt/yr' },
+      { country: 'Russia', amount: 20, unit: 'kt/yr' },
+      { country: 'Saudi Arabia', amount: 15, unit: 'kt/yr' },
+      { country: 'Kazakhstan', amount: 14, unit: 'kt/yr' },
+    ],
+    USGS,
+  ),
+  tungsten: cite(
+    [
+      { country: 'China', amount: 67, unit: 'kt/yr' },
+      { country: 'Vietnam', amount: 3.4, unit: 'kt/yr' },
+      { country: 'Russia', amount: 2, unit: 'kt/yr' },
+      { country: 'North Korea', amount: 1.7, unit: 'kt/yr' },
+      { country: 'Bolivia', amount: 1.6, unit: 'kt/yr' },
+    ],
+    USGS,
+  ),
+  uranium: cite(
+    [
+      { country: 'Kazakhstan', amount: 23270, unit: 'tU/yr' },
+      { country: 'Canada', amount: 14309, unit: 'tU/yr' },
+      { country: 'Namibia', amount: 7333, unit: 'tU/yr' },
+      { country: 'Australia', amount: 4598, unit: 'tU/yr' },
+      { country: 'Uzbekistan', amount: 4000, unit: 'tU/yr' },
+    ],
+    WNA,
+  ),
+  // ── Rare-earth compounds: shares the USGS REO distribution ──
+  re_compounds: REE_PRODUCTION,
+  // ── Industrial chemicals (USGS for ammonia/sulfur; industry estimates else) ──
+  ammonia: cite(
+    [
+      { country: 'China', amount: 43, unit: 'Mt N/yr' },
+      { country: 'Russia', amount: 14, unit: 'Mt N/yr' },
+      { country: 'United States', amount: 14, unit: 'Mt N/yr' },
+      { country: 'India', amount: 13, unit: 'Mt N/yr' },
+      { country: 'Indonesia', amount: 6.5, unit: 'Mt N/yr' },
+    ],
+    USGS,
+  ),
+  sulfuric_acid: cite(
+    [
+      { country: 'China', amount: 19.4, unit: 'Mt S/yr' },
+      { country: 'United States', amount: 8.65, unit: 'Mt S/yr' },
+      { country: 'Russia', amount: 7.53, unit: 'Mt S/yr' },
+      { country: 'Saudi Arabia', amount: 7.5, unit: 'Mt S/yr' },
+      { country: 'Kazakhstan', amount: 5.1, unit: 'Mt S/yr' },
+    ],
+    USGS,
+  ),
+  methanol: cite(
+    [
+      { country: 'China', amount: 50, unit: 'Mt/yr' },
+      { country: 'United States', amount: 9, unit: 'Mt/yr' },
+      { country: 'Iran', amount: 9, unit: 'Mt/yr' },
+      { country: 'Saudi Arabia', amount: 7, unit: 'Mt/yr' },
+      { country: 'Russia', amount: 5, unit: 'Mt/yr' },
+    ],
+    INDUSTRY,
+  ),
+  ethylene: cite(
+    [
+      { country: 'China', amount: 45, unit: 'Mt/yr' },
+      { country: 'United States', amount: 38, unit: 'Mt/yr' },
+      { country: 'Saudi Arabia', amount: 19, unit: 'Mt/yr' },
+      { country: 'South Korea', amount: 13, unit: 'Mt/yr' },
+      { country: 'India', amount: 9, unit: 'Mt/yr' },
+    ],
+    INDUSTRY,
+  ),
+  caustic_soda: cite(
+    [
+      { country: 'China', amount: 40, unit: 'Mt/yr' },
+      { country: 'United States', amount: 10, unit: 'Mt/yr' },
+      { country: 'Germany', amount: 4, unit: 'Mt/yr' },
+      { country: 'Japan', amount: 4, unit: 'Mt/yr' },
+      { country: 'India', amount: 4, unit: 'Mt/yr' },
+    ],
+    INDUSTRY,
+  ),
+  // ── Semiconductor materials (USGS for gallium; industry estimates else) ──
+  polysilicon: cite(
+    [
+      { country: 'China', amount: 1900, unit: 'kt/yr' },
+      { country: 'Germany', amount: 90, unit: 'kt/yr' },
+      { country: 'United States', amount: 60, unit: 'kt/yr' },
+      { country: 'Malaysia', amount: 50, unit: 'kt/yr' },
+      { country: 'Japan', amount: 40, unit: 'kt/yr' },
+    ],
+    INDUSTRY,
+  ),
+  gallium: cite(
+    [
+      { country: 'China', amount: 600, unit: 't/yr' },
+      { country: 'Russia', amount: 5, unit: 't/yr' },
+      { country: 'Japan', amount: 3, unit: 't/yr' },
+      { country: 'South Korea', amount: 2, unit: 't/yr' },
+    ],
+    USGS,
+  ),
+  germanium: cite(
+    [
+      { country: 'China', amount: 80, unit: 't/yr' },
+      { country: 'Belgium', amount: 25, unit: 't/yr' },
+      { country: 'Russia', amount: 5, unit: 't/yr' },
+      { country: 'United States', amount: 3, unit: 't/yr' },
+    ],
+    INDUSTRY,
+  ),
 };
 
 const RESERVES: Record<string, CountryReserves[]> = {
@@ -262,6 +428,49 @@ const RESERVES: Record<string, CountryReserves[]> = {
   ),
   neodymium: REE_RESERVES,
   dysprosium: REE_RESERVES,
+  re_compounds: REE_RESERVES,
+  // Critical-mineral reserves (USGS MCS 2025; leading holders).
+  lithium: cite(
+    [
+      { country: 'Chile', amount: 9300, unit: 'kt' },
+      { country: 'Australia', amount: 6200, unit: 'kt' },
+      { country: 'Argentina', amount: 3600, unit: 'kt' },
+      { country: 'China', amount: 3000, unit: 'kt' },
+    ],
+    USGS,
+  ),
+  cobalt: cite(
+    [
+      { country: 'DR Congo', amount: 6000, unit: 'kt' },
+      { country: 'Australia', amount: 1700, unit: 'kt' },
+      { country: 'Indonesia', amount: 600, unit: 'kt' },
+    ],
+    USGS,
+  ),
+  graphite: cite(
+    [
+      { country: 'China', amount: 78000, unit: 'kt' },
+      { country: 'Brazil', amount: 74000, unit: 'kt' },
+      { country: 'Mozambique', amount: 25000, unit: 'kt' },
+      { country: 'Madagascar', amount: 24000, unit: 'kt' },
+    ],
+    USGS,
+  ),
+  manganese: cite(
+    [
+      { country: 'South Africa', amount: 640000, unit: 'kt' },
+      { country: 'Australia', amount: 200000, unit: 'kt' },
+      { country: 'Brazil', amount: 140000, unit: 'kt' },
+    ],
+    USGS,
+  ),
+  tungsten: cite(
+    [
+      { country: 'China', amount: 2400, unit: 'kt' },
+      { country: 'Russia', amount: 400, unit: 'kt' },
+    ],
+    USGS,
+  ),
 };
 
 export function productionFor(commodityId: string): CountryProduction[] {

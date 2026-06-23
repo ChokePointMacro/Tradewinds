@@ -10,7 +10,9 @@ export type CommodityCategory =
   | 'energy'
   | 'precious_metal'
   | 'base_metal'
+  | 'critical_mineral'
   | 'rare_earth'
+  | 'semiconductor'
   | 'gas'
   | 'chemical'
   | 'fertilizer'
@@ -276,6 +278,91 @@ export interface BridgePowerDeployment {
   note: string;
   source: string;
   sourceUrl: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Midstream processing concentration — "refining, not mining, is the chokepoint"
+// (ChokepointMacro, The Twenty-Year Bottleneck, Jun 2026). Three stacked layers:
+//   Layer 1 — mineral processing & separation (REE separation, Li conversion…)
+//   Layer 2 — heavy industrial equipment (transformers, GOES, magnet sintering…)
+//   Layer 3 — fuel-cycle / feedstock single points of failure (HALEU enrichment…)
+// A mineral with diversified MINING but ~90% Chinese SEPARATION is far more
+// fragile than its mine-based score suggests; this captures that asymmetry.
+// ─────────────────────────────────────────────────────────────────────────────
+export type ProcessingLayer = 1 | 2 | 3;
+
+export type ProcessingStepKind =
+  | 'separation' // solvent extraction, ionic-clay separation (REE)
+  | 'refining' // smelt/convert to spec-grade metal or chemical
+  | 'recovery' // by-product recovery (gallium from alumina, Ge from zinc)
+  | 'enrichment' // fuel-cycle (HALEU / SWU)
+  | 'manufacturing'; // magnet sintering, cell-making, transformer/GOES fabrication
+
+export type Substitutability = 'very_low' | 'low' | 'medium' | 'high';
+export type GapRisk = 'low' | 'medium' | 'high' | 'severe';
+
+export interface ProcessingConcentration {
+  commodityId: string;
+  step: string; // human label, e.g. 'Solvent-extraction separation'
+  kind: ProcessingStepKind;
+  layer: ProcessingLayer;
+  leadingCountry: string; // dominant midstream processor (usually China)
+  sharePct: number; // leading country's share of global midstream capacity
+  substitutability: Substitutability;
+  gap2035: GapRisk; // closing-the-gap-to-2035 difficulty
+  exportControlled?: boolean; // subject to an active export-control lever
+  note: string;
+  source: string;
+  sourceUrl?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Technology → Mineral → Processing bill-of-materials (Recommendation 2).
+// Each emerging demand-driver technology links to the minerals AND the specific
+// processing steps it depends on, each tagged with concentration / substitut-
+// ability / 2035 gap. Answers: "if technology X scales, which choke points
+// tighten?" The advancement metadata mirrors the report's Section-5 table.
+// ─────────────────────────────────────────────────────────────────────────────
+export type TechMaturity =
+  | 'rd' // R&D
+  | 'demo' // demonstration scale
+  | 'pilot' // pilot
+  | 'early_commercial' // early commercial / scaling
+  | 'mature_capacity_short'; // mature tech, capacity-constrained
+
+export type DemandWave =
+  | 'ai_compute'
+  | 'electrification'
+  | 'firm_power'
+  | 'defense'
+  | 'physical_ai';
+
+// A single line of a technology's bill of materials.
+export interface TechMineralLink {
+  commodityId: string; // links into the commodity registry where one exists
+  mineral: string; // display name (may differ / aggregate, e.g. 'NdPr')
+  role: string; // what it does in the technology
+  processingStep: string; // the specific midstream step it leans on
+  concentration: string; // e.g. 'China ~90% separation'
+  substitutability: Substitutability;
+  gap2035: GapRisk;
+}
+
+export interface Technology {
+  id: string;
+  name: string;
+  sector: string; // report section, e.g. 'Batteries & storage'
+  waves: DemandWave[]; // demand megatrends pulling on it
+  thesis: string; // one line on the technology's role
+  // Section-5 "advancement that must mature" metadata (when this tech IS one):
+  advancementRank?: number; // # in the report's leverage table (1 = highest)
+  relieves?: string; // the bottleneck it relieves
+  maturity: TechMaturity;
+  scaleWindow: string; // commercial-scale window, e.g. '2026–2032'
+  isSubstitution?: boolean; // true = a substitution/recycling lever that LOWERS criticality
+  bom: TechMineralLink[];
+  source: string;
+  sourceUrl?: string;
 }
 
 export interface Scenario {

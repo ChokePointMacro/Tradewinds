@@ -8,9 +8,11 @@ const CATEGORY_META: { id: CommodityCategory; label: string }[] = [
   { id: 'energy', label: 'Energy' },
   { id: 'precious_metal', label: 'Precious metals' },
   { id: 'base_metal', label: 'Base metals' },
+  { id: 'critical_mineral', label: 'Critical minerals' },
   { id: 'rare_earth', label: 'Rare earths' },
-  { id: 'gas', label: 'Gas' },
+  { id: 'semiconductor', label: 'Semiconductors' },
   { id: 'chemical', label: 'Chemicals' },
+  { id: 'gas', label: 'Gas' },
   { id: 'agriculture', label: 'Food & agriculture' },
   { id: 'fertilizer', label: 'Fertilizer' },
 ];

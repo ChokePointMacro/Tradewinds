@@ -17,7 +17,9 @@ import {
   type ResiliencePillar,
   type ProducerShare,
   type ChokepointDependency,
+  type ProcessingDependency,
 } from '@/data/resilience/resilienceScore';
+import { LAYER_META } from '@/data/processing/processingConcentration';
 
 // Band → palette (text/bg/border + a hex for bars/gauge).
 const BAND_META: Record<
@@ -169,6 +171,50 @@ function ChokepointSimulator({
   );
 }
 
+const SUB_LABEL: Record<ProcessingDependency['substitutability'], string> = {
+  very_low: 'very low',
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+};
+
+// Processing-concentration panel (Recommendation 1): the midstream chokepoint —
+// "refining, not mining" — that gold/oil lack but rare earths and gallium live or
+// die by. Shows the binding step, the leading processor's share, and the layer.
+function ProcessingPanel({ processing }: { processing: ProcessingDependency }) {
+  const share = processing.sharePct;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-semibold text-slate-800">{processing.step}</span>
+        <span className="text-sm font-semibold tabular-nums text-red-700">{share}%</span>
+      </div>
+      <div className="mt-2 h-2 w-full overflow-hidden rounded bg-slate-100">
+        <div
+          className="h-2 rounded bg-red-500"
+          style={{ width: `${Math.min(100, share)}%`, opacity: 0.85 }}
+        />
+      </div>
+      <p className="mt-1.5 text-[11px] text-slate-500">
+        {processing.leadingCountry} controls ~{share}% of this midstream step. Substitutability{' '}
+        {SUB_LABEL[processing.substitutability]}
+        {processing.exportControlled ? ' · under active export control' : ''}.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+          {LAYER_META[processing.layer].label}
+        </span>
+        {processing.exportControlled && (
+          <span className="inline-flex items-center rounded border border-red-300 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
+            Export-controlled
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-slate-400">{processing.note}</p>
+    </div>
+  );
+}
+
 export function ResilienceTab() {
   const { commodityId } = useAppState();
   const commodity = getCommodity(commodityId)!;
@@ -198,7 +244,7 @@ export function ResilienceTab() {
     <div className="space-y-4 p-4">
       <Card
         title={`${commodity.name} — sourcing resilience`}
-        subtitle="Composite of supplier concentration, jurisdiction risk and chokepoint exposure"
+        subtitle="Composite of mine concentration, jurisdiction risk, processing concentration and chokepoint exposure"
         right={<ProvenanceBadge provenance="MODELED" />}
       >
         <p className="text-xs text-slate-500">
@@ -261,7 +307,7 @@ export function ResilienceTab() {
             </Card>
 
             <Card title="Pillar breakdown" className="lg:col-span-2">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {result.pillars.map((p) => (
                   <PillarRow key={p.key} pillar={p} />
                 ))}
@@ -269,10 +315,21 @@ export function ResilienceTab() {
             </Card>
           </div>
 
+          {/* Processing chokepoint — the "refining, not mining" axis */}
+          {result.processing && (
+            <Card
+              title="Processing chokepoint"
+              subtitle="Midstream concentration — the binding refining/separation step"
+              right={<ProvenanceBadge provenance="SOURCED" source="ChokepointMacro report · IEA / USGS" />}
+            >
+              <ProcessingPanel processing={result.processing} />
+            </Card>
+          )}
+
           {/* Drivers */}
           <div className="grid gap-4 lg:grid-cols-2">
             <Card
-              title="Supplier concentration"
+              title="Mine concentration"
               subtitle={`HHI ${result.hhi.toLocaleString('en-US')} · top producer ${result.topProducerSharePct.toFixed(0)}%`}
               right={
                 <ProvenanceBadge provenance="SOURCED" source={production?.[0]?.source ?? 'USGS / EIA'} />
@@ -326,10 +383,15 @@ export function ResilienceTab() {
 
           <Card>
             <p className="text-[11px] leading-relaxed text-slate-400">
-              <span className="font-semibold text-slate-500">Methodology.</span> Score = 35%
-              concentration (100 − HHI/100) + 30% jurisdiction (100 − production-weighted origin risk)
-              + 35% chokepoint (100 − Σ criticality × passage-severity). The baseline reflects normal
-              operations (latent passage severity); the disruption simulator overlays active closures.
+              <span className="font-semibold text-slate-500">Methodology.</span> For commodities with a
+              known midstream chokepoint, Score = 25% mine concentration (100 − HHI/100) + 20%
+              jurisdiction (100 − production-weighted origin risk) + 25% processing concentration (100 −
+              leading-processor share × substitutability factor − export-control penalty) + 30%
+              chokepoint (100 − Σ criticality × passage-severity). Commodities with no concentrated
+              refining step keep the original three-pillar split (35/30/35). This operationalises the
+              report&apos;s core correction — <em>refining, not mining, is the chokepoint</em>. The
+              baseline reflects normal operations (latent passage severity); the disruption simulator
+              overlays active closures.
               The country-risk index is sourced from the World Bank Worldwide Governance Indicators
               (risk = 100 − mean of the six WGI governance scores). Chokepoint criticality is grounded
               in EIA World Oil Transit Chokepoints flow data for crude &amp; diesel, and remains a

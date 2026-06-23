@@ -41,6 +41,30 @@ real-world numbers — flag them here instead.
   and `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` set as Vercel env vars. Until then `VITE_DATA_MODE`
   stays `mock`; with `live` set, the proxy returns 503 and the client transparently falls back to mock.
 
+## ChokepointMacro report build (processing chokepoint, technology BOM, criticality)
+
+- **DATA-PROC-1** Midstream processing-concentration shares in
+  `src/data/processing/processingConcentration.ts` (e.g. gallium ~99%, REE separation ~90%,
+  tungsten ~83%, battery-grade graphite ~80%, refined lithium >60%, Russia ~44% of SWU) are the
+  ChokepointMacro "Twenty-Year Bottleneck" report's synthesis of IEA Critical Minerals Outlook 2025
+  and USGS figures. Tagged SOURCED to the report + agency; the report's own appendix flags these as
+  analytical judgments to **re-verify against primary IEA/USGS sources** before any investment use.
+- **DATA-TECH-1** The Technology→Mineral→Processing bill-of-materials
+  (`src/data/technology/technologies.ts`) draws on the report's §3 sector lists, §5 advancements
+  table (advancement ranks, maturity, scale windows) and §7 minerals matrix. Several BOM rows name
+  inputs with no commodity record yet (GOES, hard carbon, SiC, high-purity quartz, iron-air) —
+  `commodityId` is left blank for those rather than mis-linking.
+- **DATA-CRIT-1** The criticality forward curve (`src/data/criticality/criticality.ts`) is MODELED:
+  base = 0.45 × leading-processor share + substitutability + 2035-gap + export-control penalty, then
+  substitution/recycling/diversification modifiers ramp linearly over their report-cited windows.
+  Modifier magnitudes (e.g. sodium-ion −12 on lithium by 2029) are calibrated estimates, not
+  forecasts — tune against IEA scenario data when available.
+- **DATA-RESIL-PROC-1** Adding the processing pillar shifts the **headline Resilience score** for
+  commodities with a midstream entry (rare earths, gallium, lithium, graphite, cobalt, tungsten,
+  manganese, copper, uranium, polysilicon): their weights move to 25/20/25/30 (mine/jurisdiction/
+  processing/chokepoint). Commodities without a midstream entry keep the original 35/30/35 split, so
+  oil, gold, silver, palladium and the food chains are unchanged.
+
 ## Phase 0 implementation notes
 
 - Mock supply production/reserves figures (`MockSupplyDataSource`) are illustrative placeholders for

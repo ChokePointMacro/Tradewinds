@@ -1,5 +1,6 @@
-import type { CountryProduction } from '@/types';
+import type { CountryProduction, ProcessingConcentration, Substitutability } from '@/types';
 import { CHOKEPOINTS } from '@/data/geo/chokepoints';
+import { processingFor } from '@/data/processing/processingConcentration';
 import { COUNTRY_RISK, DEFAULT_COUNTRY_RISK } from './countryRisk';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -20,7 +21,11 @@ import { COUNTRY_RISK, DEFAULT_COUNTRY_RISK } from './countryRisk';
 //                       bypass exists (Hormuz). Air-freighted metals score high.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ResiliencePillarKey = 'concentration' | 'jurisdiction' | 'chokepoint';
+export type ResiliencePillarKey =
+  | 'concentration'
+  | 'jurisdiction'
+  | 'processing'
+  | 'chokepoint';
 export type ResilienceBand = 'fragile' | 'exposed' | 'moderate' | 'resilient';
 
 export interface ProducerShare {
@@ -37,6 +42,16 @@ export interface ChokepointDependency {
   hasBypass: boolean;
   severity: number; // effective severity applied in the score (see below)
   closed: boolean; // true when toggled shut in the disruption simulator
+  note: string;
+}
+
+export interface ProcessingDependency {
+  step: string; // the binding midstream step
+  layer: 1 | 2 | 3;
+  leadingCountry: string;
+  sharePct: number; // leading processor's capacity share
+  substitutability: Substitutability;
+  exportControlled: boolean;
   note: string;
 }
 
@@ -57,19 +72,49 @@ export interface ResilienceScore {
   hhi: number; // 0–10,000 Herfindahl index of top-producer shares
   topProducerSharePct: number;
   chokepoints: ChokepointDependency[];
+  processing: ProcessingDependency | null; // midstream concentration, when known
   disruptedFlowPct: number; // Σ criticality of closed passages, as a % (0–100)
   underDisruption: boolean; // true when ≥1 passage is toggled shut
   dataYear?: number;
 }
 
-// Pillar weights (sum to 1). Concentration and chokepoint dominate because they
-// are the two failure modes the platform exists to surface; jurisdiction nuances
-// who the suppliers are.
-const WEIGHTS: Record<ResiliencePillarKey, number> = {
+// Pillar weights (each set sums to 1). Two regimes:
+//   • No midstream data → the original three-pillar split (concentration &
+//     chokepoint dominate; jurisdiction nuances who the suppliers are).
+//   • Midstream data present → processing concentration becomes its own scored
+//     axis (Recommendation 1: "refining, not mining, is the chokepoint"). It
+//     takes weight from MINE concentration, since a diversified mine with ~90%
+//     Chinese separation is far more fragile than the mine score alone implies.
+const WEIGHTS_BASE: Record<ResiliencePillarKey, number> = {
   concentration: 0.35,
   jurisdiction: 0.3,
+  processing: 0,
   chokepoint: 0.35,
 };
+const WEIGHTS_WITH_PROCESSING: Record<ResiliencePillarKey, number> = {
+  concentration: 0.25,
+  jurisdiction: 0.2,
+  processing: 0.25,
+  chokepoint: 0.3,
+};
+
+// How a midstream monopoly's substitutability scales the penalty: a contested
+// step that can be designed around (medium/high) hurts less than one with no
+// near-term alternative (very_low/low). Multiplies the leading-processor share.
+const SUB_FACTOR: Record<Substitutability, number> = {
+  very_low: 1.15,
+  low: 1.0,
+  medium: 0.82,
+  high: 0.65,
+};
+
+// Processing pillar: 100 − (leading-processor share × substitutability factor),
+// with a small extra penalty when the step is under an active export control.
+// Higher score = more resilient (diversified / substitutable midstream).
+function processingScoreOf(p: ProcessingConcentration): number {
+  const controlPenalty = p.exportControlled ? 8 : 0;
+  return clamp(100 - p.sharePct * SUB_FACTOR[p.substitutability] - controlPenalty);
+}
 
 // Country-risk index is now SOURCED from the World Bank WGI (see countryRisk.ts):
 // risk = 100 − mean WGI governance score. The composite resilience SCORE remains
@@ -133,6 +178,82 @@ const CHOKEPOINT_EXPOSURE: Record<string, { id: string; criticality: number; not
     { id: 'hormuz', criticality: 0.12, note: 'Modeled: Gulf urea / ammonia exports.' },
     { id: 'suez', criticality: 0.12, note: 'Modeled: Mideast / Black Sea fertilizer to Asia.' },
     { id: 'panama', criticality: 0.1, note: 'Modeled: US Gulf fertilizer flows.' },
+  ],
+  // Critical minerals — MODELED maritime exposure (most flows are origin- or
+  // China-processing-bound through the Indian Ocean / Malacca approaches).
+  lithium: [
+    { id: 'malacca', criticality: 0.22, note: 'Modeled: Australian spodumene & Chilean brine into Chinese converters.' },
+    { id: 'panama', criticality: 0.1, note: 'Modeled: South American brine to the Pacific.' },
+  ],
+  cobalt: [
+    { id: 'malacca', criticality: 0.2, note: 'Modeled: DRC intermediate into Chinese refineries.' },
+    { id: 'goodhope', criticality: 0.08, note: 'Modeled: Southern-African routing around the Cape.' },
+  ],
+  graphite: [
+    { id: 'malacca', criticality: 0.18, note: 'Modeled: Chinese & East-African flake into Asian processors.' },
+    { id: 'babelmandeb', criticality: 0.06, note: 'Modeled: Red Sea routing toward Europe.' },
+  ],
+  manganese: [
+    { id: 'malacca', criticality: 0.2, note: 'Modeled: South African/Gabon ore into Chinese smelters.' },
+    { id: 'goodhope', criticality: 0.1, note: 'Modeled: Cape routing from Southern Africa.' },
+  ],
+  titanium: [
+    { id: 'malacca', criticality: 0.14, note: 'Modeled: ilmenite/sponge into East-Asian processors.' },
+    { id: 'taiwan', criticality: 0.06, note: 'Modeled: East-Asian sponge/pigment flows.' },
+  ],
+  tungsten: [
+    { id: 'malacca', criticality: 0.16, note: 'Modeled: Chinese APT/carbide exports into Asia.' },
+    { id: 'taiwan', criticality: 0.06, note: 'Modeled: East-Asian routing.' },
+  ],
+  uranium: [
+    { id: 'malacca', criticality: 0.06, note: 'Modeled: containerised U₃O₈ to Asian reactors.' },
+    { id: 'babelmandeb', criticality: 0.04, note: 'Modeled: routing toward Europe.' },
+  ],
+  // Rare earths — China-origin, MODELED.
+  re_compounds: [
+    { id: 'malacca', criticality: 0.16, note: 'Modeled: Chinese RE compounds into Asian magnet/metal makers.' },
+    { id: 'taiwan', criticality: 0.06, note: 'Modeled: East-Asian routing.' },
+  ],
+  ndfeb_magnets: [
+    { id: 'malacca', criticality: 0.18, note: 'Modeled: Chinese magnets (~90%) into Asian/global OEMs.' },
+    { id: 'taiwan', criticality: 0.08, note: 'Modeled: East-Asian electronics routing.' },
+  ],
+  // Semiconductor materials — MODELED (ICs/devices/equipment move by air; no
+  // production rows, so no resilience score, so no exposure needed there).
+  polysilicon: [
+    { id: 'malacca', criticality: 0.16, note: 'Modeled: Chinese polysilicon & Asian wafers.' },
+    { id: 'taiwan', criticality: 0.1, note: 'Modeled: wafer flows into Taiwan/Korea fabs.' },
+  ],
+  gallium: [
+    { id: 'malacca', criticality: 0.18, note: 'Modeled: Chinese gallium (~98%) into Asian device makers.' },
+    { id: 'taiwan', criticality: 0.08, note: 'Modeled: East-Asian semiconductor routing.' },
+  ],
+  germanium: [
+    { id: 'malacca', criticality: 0.14, note: 'Modeled: Chinese germanium into fibre/optics makers.' },
+    { id: 'taiwan', criticality: 0.08, note: 'Modeled: East-Asian routing.' },
+  ],
+  // Industrial chemicals — MODELED (gas-carrier / chemical-tanker lanes).
+  ammonia: [
+    { id: 'hormuz', criticality: 0.12, note: 'Modeled: Gulf ammonia exports; no maritime bypass.' },
+    { id: 'suez', criticality: 0.1, note: 'Modeled: Mideast/Black Sea ammonia into Europe.' },
+    { id: 'panama', criticality: 0.08, note: 'Modeled: US Gulf / Trinidad to the Pacific.' },
+  ],
+  methanol: [
+    { id: 'hormuz', criticality: 0.12, note: 'Modeled: Mideast methanol exports.' },
+    { id: 'malacca', criticality: 0.1, note: 'Modeled: into Chinese MTO units.' },
+    { id: 'panama', criticality: 0.08, note: 'Modeled: US/Trinidad to the Pacific.' },
+  ],
+  ethylene: [
+    { id: 'malacca', criticality: 0.08, note: 'Modeled: small merchant trade (mostly captive).' },
+    { id: 'panama', criticality: 0.06, note: 'Modeled: US Gulf cargoes.' },
+  ],
+  sulfuric_acid: [
+    { id: 'malacca', criticality: 0.1, note: 'Modeled: smelter/Mideast acid into Asia.' },
+    { id: 'panama', criticality: 0.08, note: 'Modeled: Americas flows.' },
+  ],
+  caustic_soda: [
+    { id: 'malacca', criticality: 0.12, note: 'Modeled: NE-Asian lye into SE Asia.' },
+    { id: 'panama', criticality: 0.08, note: 'Modeled: US Gulf cargoes.' },
   ],
   gold: [],
   palladium: [],
@@ -230,26 +351,57 @@ export function computeResilienceScore(
     chokepoints.filter((c) => c.closed).reduce((s, c) => s + c.criticality * 100, 0),
   );
 
+  // ── Processing pillar (midstream concentration — Recommendation 1) ──
+  // Only scored when we have a cited midstream entry; otherwise the score keeps
+  // its original three-pillar shape so commodities without a known refining
+  // chokepoint (gold, oil…) are unaffected.
+  const proc = processingFor(commodityId);
+  const W = proc ? WEIGHTS_WITH_PROCESSING : WEIGHTS_BASE;
+  const processingScore = proc ? processingScoreOf(proc) : null;
+
+  const processing: ProcessingDependency | null = proc
+    ? {
+        step: proc.step,
+        layer: proc.layer,
+        leadingCountry: proc.leadingCountry,
+        sharePct: proc.sharePct,
+        substitutability: proc.substitutability,
+        exportControlled: Boolean(proc.exportControlled),
+        note: proc.note,
+      }
+    : null;
+
   const pillars: ResiliencePillar[] = [
     {
       key: 'concentration',
-      label: 'Supplier concentration',
+      label: 'Mine concentration',
       score: Math.round(concentrationScore),
-      weight: WEIGHTS.concentration,
+      weight: W.concentration,
       summary: `Top producer ${topProducerSharePct.toFixed(0)}% of listed supply · HHI ${Math.round(hhi).toLocaleString('en-US')}`,
     },
     {
       key: 'jurisdiction',
       label: 'Jurisdiction risk',
       score: Math.round(jurisdictionScore),
-      weight: WEIGHTS.jurisdiction,
+      weight: W.jurisdiction,
       summary: `Production-weighted origin risk ${weightedRisk.toFixed(0)}/100`,
     },
+    ...(proc && processingScore !== null
+      ? [
+          {
+            key: 'processing' as const,
+            label: 'Processing concentration',
+            score: Math.round(processingScore),
+            weight: W.processing,
+            summary: `${proc.leadingCountry} ~${proc.sharePct}% of ${proc.step.toLowerCase()}${proc.exportControlled ? ' · export-controlled' : ''}`,
+          },
+        ]
+      : []),
     {
       key: 'chokepoint',
       label: 'Chokepoint exposure',
       score: Math.round(chokepointScore),
-      weight: WEIGHTS.chokepoint,
+      weight: W.chokepoint,
       summary:
         chokepoints.length === 0
           ? 'Negligible maritime chokepoint dependence'
@@ -260,9 +412,10 @@ export function computeResilienceScore(
   ];
 
   const score =
-    concentrationScore * WEIGHTS.concentration +
-    jurisdictionScore * WEIGHTS.jurisdiction +
-    chokepointScore * WEIGHTS.chokepoint;
+    concentrationScore * W.concentration +
+    jurisdictionScore * W.jurisdiction +
+    (processingScore ?? 0) * W.processing +
+    chokepointScore * W.chokepoint;
 
   return {
     commodityId,
@@ -273,6 +426,7 @@ export function computeResilienceScore(
     hhi: Math.round(hhi),
     topProducerSharePct,
     chokepoints,
+    processing,
     disruptedFlowPct: Math.round(disruptedFlowPct),
     underDisruption: chokepoints.some((c) => c.closed),
     dataYear: production[0]?.year,

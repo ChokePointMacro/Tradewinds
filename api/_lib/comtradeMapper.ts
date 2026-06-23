@@ -30,10 +30,35 @@ export const COMTRADE_HS: Record<string, { code: string; label: string }> = {
   copper: { code: '7403', label: 'Refined copper' },
   nickel: { code: '7502', label: 'Unwrought nickel' },
   palladium: { code: '711021', label: 'Palladium, unwrought/powder' },
-  // Rare earths: HS6 does not separate individual elements, so both map to the
-  // rare-earth compounds heading (Comtrade aggregate).
+  // Rare earths: HS6 does not separate individual elements, so they map to the
+  // rare-earth compounds heading (Comtrade aggregate). NdFeB magnets have their
+  // own heading (8505.11, metal permanent magnets).
   neodymium: { code: '2846', label: 'Rare-earth compounds (Comtrade aggregate)' },
   dysprosium: { code: '2846', label: 'Rare-earth compounds (Comtrade aggregate)' },
+  re_compounds: { code: '2846', label: 'Rare-earth compounds (HS 2846)' },
+  ndfeb_magnets: { code: '850511', label: 'Permanent magnets, of metal (NdFeB/SmCo)' },
+  // Critical minerals (USGS critical-materials backbone)
+  lithium: { code: '283691', label: 'Lithium carbonate' },
+  cobalt: { code: '810520', label: 'Cobalt, unwrought / intermediates' },
+  graphite: { code: '250410', label: 'Natural graphite, flake/powder' },
+  manganese: { code: '2602', label: 'Manganese ores & concentrates' },
+  titanium: { code: '810820', label: 'Titanium, unwrought (sponge)' },
+  tungsten: { code: '8101', label: 'Tungsten (wolfram) & articles' },
+  uranium: { code: '284410', label: 'Natural uranium & its compounds' },
+  // Semiconductors. gallium & germanium share HS 811292 (a multi-metal basket —
+  // not isolable at HS6), so their trade flows are identical and approximate.
+  integrated_circuits: { code: '8542', label: 'Electronic integrated circuits' },
+  semiconductor_devices: { code: '8541', label: 'Diodes, transistors & semiconductor devices' },
+  semicon_equipment: { code: '8486', label: 'Semiconductor/FPD manufacturing machines' },
+  polysilicon: { code: '280461', label: 'Silicon ≥99.99% (polysilicon)' },
+  gallium: { code: '811292', label: 'Gallium (HS 811292 basket — approximate)' },
+  germanium: { code: '811292', label: 'Germanium (HS 811292 basket — approximate)' },
+  // Industrial chemicals
+  ammonia: { code: '281410', label: 'Anhydrous ammonia' },
+  methanol: { code: '290511', label: 'Methanol' },
+  ethylene: { code: '290121', label: 'Ethylene' },
+  sulfuric_acid: { code: '2807', label: 'Sulfuric acid; oleum' },
+  caustic_soda: { code: '281512', label: 'Sodium hydroxide in aqueous solution' },
   // Food inputs
   wheat: { code: '1001', label: 'Wheat & meslin' },
   corn: { code: '1005', label: 'Maize (corn)' },
