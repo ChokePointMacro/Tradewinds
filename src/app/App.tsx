@@ -7,6 +7,8 @@ import { RatesTab } from '@/tabs/rates/RatesTab';
 import { PortsTab } from '@/tabs/ports/PortsTab';
 import { ResilienceTab } from '@/tabs/resilience/ResilienceTab';
 import { TechnologyTab } from '@/tabs/technology/TechnologyTab';
+import { MagnetChainTab } from '@/tabs/magnet-chain/MagnetChainTab';
+import { InnovationsTab } from '@/tabs/innovations/InnovationsTab';
 import { ProjectsTab } from '@/tabs/projects/ProjectsTab';
 import { BridgePowerTab } from '@/tabs/bridgepower/BridgePowerTab';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -20,6 +22,8 @@ type TabId =
   | 'rates'
   | 'resilience'
   | 'technology'
+  | 'magnet'
+  | 'innovations'
   | 'projects'
   | 'bridge';
 
@@ -30,6 +34,8 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'rates', label: 'Rates' },
   { id: 'resilience', label: 'Resilience' },
   { id: 'technology', label: 'Technology' },
+  { id: 'magnet', label: 'Magnet Chain' },
+  { id: 'innovations', label: 'Innovations' },
   { id: 'projects', label: 'Projects' },
   { id: 'bridge', label: 'Bridge Power' },
 ];
@@ -80,6 +86,8 @@ export function App() {
             {tab === 'rates' && <RatesTab />}
             {tab === 'resilience' && <ResilienceTab />}
             {tab === 'technology' && <TechnologyTab />}
+            {tab === 'magnet' && <MagnetChainTab />}
+            {tab === 'innovations' && <InnovationsTab />}
             {tab === 'projects' && <ProjectsTab />}
             {tab === 'bridge' && <BridgePowerTab />}
           </ErrorBoundary>

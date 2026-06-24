@@ -365,6 +365,102 @@ export interface Technology {
   sourceUrl?: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Innovations & Ventures tracker (new tab). The companies and projects racing to
+// break the processing/manufacturing chokepoints — separation, magnet-making,
+// HALEU enrichment, battery chemistry, recycling — with their stage, ownership,
+// financing (equity / debt / government / offtake) and milestone updates.
+// Sourced from the ChokepointMacro reports + public disclosures; financing
+// figures are point-in-time and flagged for verification (DATA_GAPS DATA-VENT-1).
+// ─────────────────────────────────────────────────────────────────────────────
+export type VentureCategory =
+  | 'separation' // rare-earth separation / refining
+  | 'magnets' // NdFeB / SmCo magnet-making
+  | 'enrichment' // HALEU / nuclear fuel cycle
+  | 'reactor' // SMR / advanced reactor (HALEU offtaker)
+  | 'battery' // sodium-ion / solid-state / LFP
+  | 'recycling' // magnet & battery recycling
+  | 'mining_dle'; // mining / direct lithium extraction
+
+export type VentureStage =
+  | 'research'
+  | 'pilot'
+  | 'demo'
+  | 'construction'
+  | 'early_commercial'
+  | 'commercial';
+
+export type FundingKind = 'equity' | 'debt' | 'government' | 'offtake' | 'grant';
+
+export interface VentureFunding {
+  label: string; // 'DoD equity', 'GM offtake', 'DOE grant', 'Senior debt'
+  kind: FundingKind;
+  amountUsdB?: number; // disclosed value, USD billions (omit when not disclosed)
+  year?: number;
+  note?: string;
+}
+
+export interface VentureUpdate {
+  dateISO: string; // milestone date (YYYY-MM or YYYY-MM-DD)
+  note: string;
+}
+
+export interface InnovationVenture {
+  id: string;
+  name: string; // flagship project / facility
+  company: string; // operator / developer
+  ticker?: string; // 'NYSE: MP'
+  category: VentureCategory;
+  advancementRank?: number; // report Section-5 advancement # it advances
+  thesis: string; // one line on why it matters
+  stage: VentureStage;
+  country: string;
+  location?: string;
+  ownership: string; // parent / strategic backers
+  capacity?: string; // '10,000 MT/yr NdFeB', '900 MT SWU'
+  funding: VentureFunding[];
+  updates: VentureUpdate[]; // newest last
+  source: string;
+  sourceUrl?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Source-to-finished-magnet supply chain (new tab). Each stage from rare-earth
+// ore to a coated, magnetised NdFeB magnet on the open market: its cost
+// contribution, the companies and countries that dominate it, China's share, and
+// geographic nodes for the route map. Cost figures are MODELED; concentration is
+// SOURCED to the ChokepointMacro magnet briefings (IEA / IDTechEx / MP).
+// ─────────────────────────────────────────────────────────────────────────────
+export interface ChainNode {
+  name: string; // facility / hub
+  country: string;
+  lng: number;
+  lat: number;
+}
+
+export interface MagnetChainStage {
+  id: string;
+  order: number;
+  stage: string; // 'Mining', 'Separation', 'Metal & alloy', 'Magnet-making', 'Open market'
+  description: string;
+  output: string; // what leaves this stage
+  costUsdPerKg: number; // MODELED cost added per kg of finished magnet
+  chinaSharePct: number; // China's share of this stage (SOURCED)
+  dominantCompanies: string[];
+  dominantCountries: string[];
+  exportControlled?: boolean;
+}
+
+// A geographic route through the chain (dominant China route vs emerging Western).
+export interface MagnetRoute {
+  id: string;
+  label: string;
+  color: string;
+  dominant: boolean; // true = the ~90% China path
+  nodes: ChainNode[]; // ordered mine → … → market
+  note: string;
+}
+
 export interface Scenario {
   id: string;
   name: string;

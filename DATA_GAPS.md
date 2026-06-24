@@ -65,6 +65,20 @@ real-world numbers — flag them here instead.
   processing/chokepoint). Commodities without a midstream entry keep the original 35/30/35 split, so
   oil, gold, silver, palladium and the food chains are unchanged.
 
+## Innovations tracker + magnet supply-chain tabs
+
+- **DATA-VENT-1** Venture financing figures in `src/data/innovations/innovations.ts` (e.g. MP DoD
+  $0.4B equity + $110/kg floor, Apple $0.5B recycling prepay, X-energy Amazon round, Redwood DOE
+  loan, LIS $1.38B Oak Ridge plan) are point-in-time PUBLIC deal values synthesised from the
+  ChokepointMacro briefings + company disclosures. Re-verify against primary filings before any
+  investment use; undisclosed amounts are rendered `n/d`, never estimated. Milestone dates are
+  reported approximate (YYYY-MM).
+- **DATA-MAGCOST-1** Per-stage USD/kg costs in `src/data/magnetchain/magnetChain.ts` are MODELED
+  illustrative splits of a representative ~$75/kg finished sintered-NdFeB value — they move with
+  NdPr/Dy/Tb prices, grade (N35→N52, none→AH) and scale. The China-share concentration figures
+  (mining ~70%, separation ~90%, magnet-making ~90–94%) are SOURCED to the briefings (IEA/IDTechEx/MP).
+  Route-map node coordinates are approximate facility locations for visualisation only.
+
 ## Phase 0 implementation notes
 
 - Mock supply production/reserves figures (`MockSupplyDataSource`) are illustrative placeholders for
